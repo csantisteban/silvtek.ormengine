@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Silvtek.ORMEngine", "Silvtek.ORMEngine.csproj", "{E54AE1D1-5B25-4CAA-A2E8-3A8C15636BDE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E54AE1D1-5B25-4CAA-A2E8-3A8C15636BDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E54AE1D1-5B25-4CAA-A2E8-3A8C15636BDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E54AE1D1-5B25-4CAA-A2E8-3A8C15636BDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E54AE1D1-5B25-4CAA-A2E8-3A8C15636BDE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Dynamsoft SCM Anywhere Hosted VSPpackage) = preSolution
+		SccAuxPath = 
+		SccNumbersOfProjects = 1
+		SccProjectUniqueName0 = Silvtek.ORMEngine.csproj
+		SccProjectName0 = Silvtek ORM Engine:$/1.7/Silvtek.ORMEngine v1.7/Silvtek.ORMEngine
+	EndGlobalSection
+EndGlobal

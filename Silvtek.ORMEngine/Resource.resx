@@ -1,0 +1,523 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="TRACE_TransObjectError" xml:space="preserve">
+    <value>-----[Transaction Failed] ----
+Object: {0}
+Exception : {1}
+[ROLLING BACK]
+--------------------------------------
+</value>
+  </data>
+  <data name="RES_SecuencialInt32OrInt64" xml:space="preserve">
+    <value>The DataType of a sequential member must either be Int32 or Int64. Exception on {0} property.
+            </value>
+  </data>
+  <data name="RES_LoadLocked" xml:space="preserve">
+    <value>Cannot load record from database while ORM object is locked.</value>
+  </data>
+  <data name="RESULTSET:EXCEPTION:NO_PK_OR_SEQ" xml:space="preserve">
+    <value>The PROPERTY used as key to access the ResultSet is not a PrimaryKey or Sequential therefore does not guarantee it will unique. DataObject: {0} Property: {1}</value>
+  </data>
+  <data name="EXMSG:ORMInfo:EMPTY_CONNECTION_NAME" xml:space="preserve">
+    <value>The class '{0}' doesn't have a connection name defined. Define a connection by either on the Table attribute, or throught the ORM class.</value>
+  </data>
+  <data name="RES_CreateLocked" xml:space="preserve">
+    <value>Cannot create record in the database while the ORM object is locked.                </value>
+  </data>
+  <data name="RES_DataObjectSQLException" xml:space="preserve">
+    <value>{0}. SQL: {1}
+            </value>
+  </data>
+  <data name="RES_Connection_not_found" xml:space="preserve">
+    <value>Connection name "{0}" not found!. Define connection at Connections.Config</value>
+  </data>
+  <data name="QUERY:ORDER_BY_EXCEPTION" xml:space="preserve">
+    <value>Exception occurred when adding an OrderBy property. The Property {0} does not exist in {1}. </value>
+  </data>
+  <data name="RES_RemoveReadOnly" xml:space="preserve">
+    <value>Failed to remove record in the database because object is 'ReadOnly'</value>
+  </data>
+  <data name="TRACE:NUMBER_OF_REF_PER_DATAOBJECT" xml:space="preserve">
+    <value>    References stadistics for --- {0} ---
+    Total created references: {1}.
+    Dead References: {2}  (This references had been removed)
+    Currently references: {3}
+    Time: {4:dd/MM/yyyy HH:mm:ss.fffffff}
+    * Since las cleaning process.
+        </value>
+  </data>
+  <data name="Query:Ex:NOT_SUPPORTED_LOGICAL_OPERATOR" xml:space="preserve">
+    <value>The logical operator {0} is not supported.</value>
+  </data>
+  <data name="Querying:EXMSG&gt;EMPTY_COLLECTION" xml:space="preserve">
+    <value>COLLECTION IS EMPTY. Unable to generate valid sql with an empty collection.</value>
+  </data>
+  <data name="RES_ColumnAttributeMissing" xml:space="preserve">
+    <value>The attribute Column is missing. ORM object must have atleast on column defined.</value>
+  </data>
+  <data name="MappedMember:ParseEnumeration:PARSE_FAILED" xml:space="preserve">
+    <value>The value '{0}' cannot be converted to enumeration '{1}'. Column: {2}. Class {3} Member {4}.</value>
+  </data>
+  <data name="FAILED_REASON_UNABLETOSUCCESS" xml:space="preserve">
+    <value>Object unable to update, store, or load record.</value>
+  </data>
+  <data name="Querying:EXMSG&gt;INVALID_AGGREGATE_CRITERIA" xml:space="preserve">
+    <value>Query expects an aggregate criteria.</value>
+  </data>
+  <data name="FAILED_REASON_EXCEPTION" xml:space="preserve">
+    <value>An unhandled exception has been encountered.</value>
+  </data>
+  <data name="TRACE:CON_FORCED_TO_CLOSE" xml:space="preserve">
+    <value>   Connection forced to close !
+   The connection ID: {0} 
+   Time open : {1}
+   Time elapsed since last execution: {2}
+</value>
+  </data>
+  <data name="ConvertionType:NOT_IMPLEMENTED" xml:space="preserve">
+    <value>The Convertion Type '{0}' is not supported in this version of the ORM Engine.</value>
+  </data>
+  <data name="RES_NonEnum" xml:space="preserve">
+    <value>ColumnAttribute Error.  Only DataType.Enum properties must provide the argument typeof(object).
+            </value>
+  </data>
+  <data name="TRACE:ASSERT:FAILED_TO_COPY_PROPS" xml:space="preserve">
+    <value>Failed to copy column properties from ArrayList to a ColumnProperty Array.
+   </value>
+  </data>
+  <data name="ConnectionInfo:DbTypeInitializationException" xml:space="preserve">
+    <value>Unable to initialize the Database Type class '{0}' from assembly '{1}''</value>
+  </data>
+  <data name="TRACE:SQLCRITERIA:NO_SAME_TYPE" xml:space="preserve">
+    <value>The property {0} in {1} is not the same DataType of {2} in {3}.
+Query could return unexpected results!.</value>
+  </data>
+  <data name="FAILED_REASON_UNBOUNDED" xml:space="preserve">
+    <value>Object is not bound to a record. Not bound records cannot being saved or removed.</value>
+  </data>
+  <data name="RES_IsEnum" xml:space="preserve">
+    <value>A column defined with DataType.Enum must have the enumeration type. i.e Column[("Status", DataType.Enum, typeof(Status))]
+            </value>
+  </data>
+  <data name="RES_PKIsNullOnInsert" xml:space="preserve">
+    <value>Failed to create/save record at datasource. Primary key property {0} is null
+            </value>
+  </data>
+  <data name="EXMSG:ORM:TYPE_NOT_FOUND" xml:space="preserve">
+    <value>The type '{0}' has not been found. Check that you type inherit is an ORM type. An ORM type implements IORM interface, or inherits from ORMBase.</value>
+  </data>
+  <data name="EXCEPTION:PROP_IS_NULL" xml:space="preserve">
+    <value>NULL VALUE!. The member/property "{0}" defined in {1} attempted to create or update a null value in the database. Null values can be handled by providing a default value. The Property current value is: {2}. </value>
+  </data>
+  <data name="DataObjectSQLBuilder:GetEnumerationValue:INVALID_ENUM" xml:space="preserve">
+    <value>The value passed to column '{0}' is not an enumeration. The value type is '{1}' </value>
+  </data>
+  <data name="TRANSACTION:ROLLBACK_MESSAGE" xml:space="preserve">
+    <value>* Rolling back {0} transaction for object {1}</value>
+  </data>
+  <data name="TRACE:LOADED_FROM_DB" xml:space="preserve">
+    <value>ORMObject "{0}" loaded from the database</value>
+  </data>
+  <data name="RES_PK_NotFound" xml:space="preserve">
+    <value>Primary keys not found!.
+            </value>
+  </data>
+  <data name="QUERYEXCEPTION:NOT_SUPPORTED_WITH_COLLECTIONS" xml:space="preserve">
+    <value>{0} is not supported with a collection of values. "condition" paramenter must be SQLCondition.In or SQLCondition.NotIn.</value>
+  </data>
+  <data name="TRACE:START_REF_CLEANING" xml:space="preserve">
+    <value>START REFERENCE CLEANING
+Total unique DataObjects: {0}
+Total WeakRef to DataObjects: {1}
+Time: {2:MM/dd/yyyy HH:mm:ss.fffffff}
+</value>
+  </data>
+  <data name="MappedMember:ParseEnumeration:PARSE_FAILED_INVALID_TYPE" xml:space="preserve">
+    <value>Invalid value type '{0}'. The value stored in the database cannot be converted to '{1}' because of its type. Column:'{2}'. Class: '{3}'. Member:'{4}'. Valid types are  SByte, Int16, Int32, Int64, Byte, UInt16, UInt32, or UInt64. 
+
+</value>
+  </data>
+  <data name="RES_PKAttributeMissing" xml:space="preserve">
+    <value>PrimaryKey attribute missing. An ORM Object must have at least one property defines as primary Key.</value>
+  </data>
+  <data name="QUERYEXCEPTION:NOT_SUPPORTED_WITH_BETWEEN" xml:space="preserve">
+    <value>{0} is not supported when using two values. "comparison" parameter must be SQLComparison.Between or SQLComparison.NotBetween</value>
+  </data>
+  <data name="RES_RemoveLocked" xml:space="preserve">
+    <value>Cannot remove record in a the data source whene DataObject is locked.</value>
+  </data>
+  <data name="TRACE:Caching:ValidateValueArgument" xml:space="preserve">
+    <value>The 'value' to be stored in the 'Cache' cannot be null.</value>
+  </data>
+  <data name="FAILED_REASON_READONLY" xml:space="preserve">
+    <value>Object is set as Read Only, no operation that modifies record at the database is allowed.</value>
+  </data>
+  <data name="RES_StoreLocked" xml:space="preserve">
+    <value>Cannot store record in a the data source whene DataObject is locked.</value>
+  </data>
+  <data name="Querying:EXMSG&gt;COMPARISON_NOT_FOR_SINGLE_VALUE" xml:space="preserve">
+    <value>The comparison '{0}' cannot be used with a single value.</value>
+  </data>
+  <data name="RES_DataObjectAttributeMissing" xml:space="preserve">
+    <value>A object which inherits ORMObject class must have the Table attributes. I.E [Table("TABLE_NAME", "CONNECTION_NAME")];            </value>
+  </data>
+  <data name="RES_NonSecuencialNumber" xml:space="preserve">
+    <value>Failed to received next secuencial number for  {0} property.
+            </value>
+  </data>
+  <data name="TRACE:LOADED_FROM_REFERENCE" xml:space="preserve">
+    <value>ORMObject "{0}" copied from memory.</value>
+  </data>
+  <data name="EXCEPTION_QUERY_PROP_NOT_FOUND" xml:space="preserve">
+    <value>Property {0} not found for {1}.</value>
+  </data>
+  <data name="EXMSG_ObjectSchemaInfo_EMPTY_CONNECTION_NAME" xml:space="preserve">
+    <value>The object '{0}' does not have an specified connection name.</value>
+  </data>
+  <data name="DEBUG:CacheItem:WriteState" xml:space="preserve">
+    <value>CacheItem State: '{0}'
+Begin Time: {1:G}
+Expiration Time: {2:G}
+Duration: {3}
+Age: {4}
+Hits: {5}</value>
+  </data>
+  <data name="FAILED_REASON_LOAD" xml:space="preserve">
+    <value>Object already bound to a record.</value>
+  </data>
+  <data name="TRACE:Caching:ValidateKeyArgument" xml:space="preserve">
+    <value>The 'key' argument for adding to the 'Cache' must be an instance of a class, and cannot be an empty string.</value>
+  </data>
+  <data name="ConnectionInfo:ProviderInitializationException" xml:space="preserve">
+    <value>Unable to initialize the provider class '{0}' from assembly '{1}''</value>
+  </data>
+  <data name="RES_NullException" xml:space="preserve">
+    <value>[{0}] in [{1}] cannot accept null or empty string values. Verify that you are setting a value to this property and/or datasource is not providing a null value (null column).
+            </value>
+  </data>
+  <data name="EXCEPTION_QUERY_CONTRUCTOR" xml:space="preserve">
+    <value>Type must be or inhered DataObject type.</value>
+  </data>
+  <data name="TRACE:WEAK_NULL_AFTER_VERIF" xml:space="preserve">
+    <value>ORMObject was null even though the weak reference was verified.
+   
+        </value>
+  </data>
+  <data name="EXCEPTION_INFOPOOL" xml:space="preserve">
+    <value>EXCEPTION ON DataObjectInfoPool
+Object: {0}
+Message: {1}
+Stack Trace: {2}
+DateTime: {3:G}</value>
+  </data>
+  <data name="FAILED_REASON_CREATE" xml:space="preserve">
+    <value>Object already bound to a record. Cannot create an existing persistant record</value>
+  </data>
+  <data name="Querying:EXMSG&gt;COMPARISON_NOT_FOR_SUBQUERIES" xml:space="preserve">
+    <value>INVALID COMPARISON OPERATOR. The comparison '{0}' cannot be used with subqueries.</value>
+  </data>
+  <data name="RES_PKChangedAfterBind" xml:space="preserve">
+    <value>DataObject instance has been invalided and unbounded from data source because primary keys has been changed after the instace had be bound to the datasource.</value>
+  </data>
+  <data name="EXMSG:ConnectionManager:CONNECTION_NAME_NOT_FOUND" xml:space="preserve">
+    <value>The connection name '{0}' has not been found. </value>
+  </data>
+  <data name="ERROR_ColumnMoreThanOnce" xml:space="preserve">
+    <value>The column {0} has been defined more than once in the same DataObject object.</value>
+  </data>
+  <data name="TRACE_EXECUTE_QUERY_EXCEPTION" xml:space="preserve">
+    <value>
+An Exception occurred when execution query.
+
+SQL :
+{0}
+
+Exception Message:  {1}
+
+Stack Trace: {2}
+
+
+</value>
+  </data>
+  <data name="RES_CreateReadOnly" xml:space="preserve">
+    <value>Cannot create record in the data source when DataObject is ReadOnly</value>
+  </data>
+  <data name="Querying:EXMSG&gt;COMPARISON_NOT_FOR_MULTIPLE_VALUES" xml:space="preserve">
+    <value>INVALID COMPARISON OPERATOR!. The comparison '{0}' is not valid for multiple values.</value>
+  </data>
+  <data name="FAILED_REASON_LOCKED" xml:space="preserve">
+    <value>Object is LOCKED, Load, Store, Create, Remove operations are not allowed</value>
+  </data>
+  <data name="TRACE:WEAK_NULL_REF" xml:space="preserve">
+    <value>Reference Manager return a null reference.
+This happened when trying to reach the weak referecen for the ORMObject: '{0}'</value>
+  </data>
+  <data name="RES_StoreReadOnly" xml:space="preserve">
+    <value>Cannot store record in the data source when DataObject is ReadOnly</value>
+  </data>
+  <data name="Querying:EXMSG&gt;LOGICAL_OPERATOR_NOT_SET" xml:space="preserve">
+    <value>LOGICAL OPERATOR IS NOT SET. When adding criteria you must set the logical operator to 'And' or 'Or'.</value>
+  </data>
+  <data name="TRACE_END_CLEANING_REF" xml:space="preserve">
+    <value>  END CLEANING DEAD REFERENCES.
+	  * Total Unique DataObjects: {0}.
+	  * Total WeakRef DataObjects: {1}.
+	  * Total Dead WeakRef removed: {2}.
+   Time: {3:MM/dd/yyyy HH:mm:ss.fffffff}
+        </value>
+  </data>
+  <data name="TRACE_TransFailed" xml:space="preserve">
+    <value>-----[Transaction Failed]-----
+Object: {0}
+Operation: {1}
+Reason: {2}
+ROLLING BACK.
+--------------------------------------
+
+</value>
+  </data>
+  <data name="Querying:EXMSG&gt;COMPARISON_NOT_FOR_TWO_VALUES" xml:space="preserve">
+    <value>The comparison '{0}' cannot be used with two values. Use Comparison.Between or Comparison.NotBetween instead.</value>
+  </data>
+  <data name="QUERYING:EXMSG&gt;MEMBER_NOT_FOUND" xml:space="preserve">
+    <value>The field or property '{0}' don't exists on the class '{1}'</value>
+  </data>
+  <data name="TRACE:MAX_CON_COUNTER" xml:space="preserve">
+    <value>The connection identifier seed had reach its maximun value. it will be reset to -1. </value>
+  </data>
+  <data name="QUERYING:EXMSG&gt;NOT_SUPPORTED_COMPARISON" xml:space="preserve">
+    <value>The comparison '{0}' is not supported.</value>
+  </data>
+  <data name="TRACE:BIDDING_AUBOUND_OBJECT" xml:space="preserve">
+    <value>     Bidding an unbound object! - Unique key: {0}.
+     ** This is a major error, A unbound object cannot be binded to the database.
+        </value>
+  </data>
+  <data name="EXMSG&gt;&gt;ORM_OBJECT_SCHEMA:DUPLICATED_COLUMN" xml:space="preserve">
+    <value>Duplicated column definition. Column '{0}' defined for member '{1}' has already defined on member '{2}'.</value>
+  </data>
+  <data name="QueryData::EXMSG:DIFFERENT_CONNECTIONS" xml:space="preserve">
+    <value>Unable to query object which are loaded which different connections. {0} uses connection name {1}. Object {2} uses connection {3}</value>
+  </data>
+  <data name="RULES-EXCEPTION:IDENTITY_OR_SEQUENTIAL" xml:space="preserve">
+    <value>A field or property must be an database identity or a sequential, but cannot be both.</value>
+  </data>
+  <data name="RULES-EXCEPTION:PRIMARY_KEY_NO_ACCEPT_NULLS" xml:space="preserve">
+    <value>A field or property marked as primary key cannot accept nulls.</value>
+  </data>
+  <data name="RULES-EXCEPTION:TOO_MANY_COLUMN_ATTR_SAME_MEMBER" xml:space="preserve">
+    <value>A field or property cannot be marked with more than one column attribute.</value>
+  </data>
+  <data name="RULES-EXCEPTION:UNIQUE_NO_ACCEPT_NULLS" xml:space="preserve">
+    <value>A field or property marked as unique cannot accept nulls.</value>
+  </data>
+  <data name="RULES-EXCEPTION:QUERYATTRIBUTE_WITH_COLUMNATTRIBUTE" xml:space="preserve">
+    <value>ColumnAttribute and QueryAttribute cannot be placed on the same property or field. Type: {0} Member: {1}</value>
+  </data>
+  <data name="DEV-EXCEPTION:RULES_NOT_APPLIED" xml:space="preserve">
+    <value>Rules had not been applied. Object is not ready. [DEV-ERR]</value>
+  </data>
+  <data name="MAPPING:DATATYPE_NOT_EQUAL_TO_MEMBERTYPE" xml:space="preserve">
+    <value>The datatype '{0}' declared for the member '{1}' do not match. Class: {2}</value>
+  </data>
+  <data name="Schema:PROPERTY_MUST_HAVE_GET_SET" xml:space="preserve">
+    <value>Properties marked with the column attribute must have Get and Set accessors. property:{0} class:{1}</value>
+  </data>
+  <data name="SQL:VALUE_SET_EXCEEDS_CAPACITY" xml:space="preserve">
+    <value>The value assigned exceeds the capacity declared. Class: {0}, Member:{1}, Capacity: {2}, Value: {3}</value>
+  </data>
+  <data name="XMLSCHEMA:CLASS_MAP_NOT_FOUND" xml:space="preserve">
+    <value>A map node for type '{0}' has not been defined. Xml Map File: {1}</value>
+  </data>
+  <data name="XMLSCHEMA:CLASS_TABLE_NOT_DEFINED" xml:space="preserve">
+    <value>The table node has not been defined for the type {0}. Xml MapFile:{1}</value>
+  </data>
+  <data name="XMLSCHEMA:XML_NOT_FOUND" xml:space="preserve">
+    <value>The xml mapping file '{0}' has not been found. (Application might not have access).</value>
+  </data>
+  <data name="XMLSCHEMA:CONNECTION-NAME_ATTRIBUTE_MISSING" xml:space="preserve">
+    <value>The 'connection-name' attribute in node 'table' is missing for type {0}. Xml MapFile:{1}</value>
+  </data>
+  <data name="XMLSCHEMA:NAME_ATTRIBUTE_MISSING" xml:space="preserve">
+    <value>The 'name' attribute in the node 'table' is missing for type {0}. Xml MapFile:{1}</value>
+  </data>
+  <data name="XMLSCHEMA:INVALID_DATATYPE" xml:space="preserve">
+    <value>The declared datatype '{0}' is invalid. class {1} </value>
+  </data>
+  <data name="XMLSCHEMA:INVALID_SEQUENTIAL_TYPE" xml:space="preserve">
+    <value>The value {0} is not a valid sequential type.</value>
+  </data>
+  <data name="XMLSCHEMA:INVALID_VALUE_BOOLEAN" xml:space="preserve">
+    <value>The value {0} for the attribute {1} is not a boolean (True/False) value. Node: {2} </value>
+  </data>
+  <data name="XMLSCHEMA:INVALID_VALUE_INT32" xml:space="preserve">
+    <value>The value {0} for the attribute {1} is not a numeric value. </value>
+  </data>
+  <data name="XMLSCHEMA:NOT_FOUND_MEMBER" xml:space="preserve">
+    <value>The mapped member '{0}' does not exists in the class {1}. Check the Xml Mapper file.</value>
+  </data>
+  <data name="CONNECTION_MANAGER:CONNECTION_NAME_MISSING" xml:space="preserve">
+    <value>The connection attribute 'name' is missing. Each connection declared must have an unique name.</value>
+  </data>
+  <data name="CONNECTION_MANAGER:CONNECTION_PROVIDER_MISSING" xml:space="preserve">
+    <value>The connection provider is missing for the connection name '{0}'.</value>
+  </data>
+  <data name="CONNECTION_MANAGER:CONNECTION_STRING_MISSING" xml:space="preserve">
+    <value>The connection string node is missing, or no value has been set.</value>
+  </data>
+  <data name="CONNECTION_MANAGER:DUPLICATE_CONNECTION_NAME" xml:space="preserve">
+    <value>Failed while adding a new connection name to the connection collection. Name:{0}</value>
+  </data>
+  <data name="CONNECTION_MANAGER:FORMATTER_PROVIDER_MISSING" xml:space="preserve">
+    <value>The database formatter provider is missing for connection name '{0}'</value>
+  </data>
+  <data name="CONNECTION_MANAGER:MAP_FILE_PATH_NOT_FOUND" xml:space="preserve">
+    <value>The map file folder do not exists or there is not enough permission to access it. Path:{0}</value>
+  </data>
+  <data name="CONNECTION_MANAGER:BALANCER_PATH_NOT_FOUND" xml:space="preserve">
+    <value>The balancer folder do not exists or there is not enough permission to access it. Path:{0}</value>
+  </data>
+  <data name="UTILITY:INVALID_TO_PARSE_TO_BOOL" xml:space="preserve">
+    <value>The value for the attribute {0} cannot be parsed to a boolean type (True or False).</value>
+  </data>
+  <data name="UTILITY:INVALID_TO_PARSE_TO_INT32" xml:space="preserve">
+    <value>The value for the attribute {0} cannot be parsed to integer.</value>
+  </data>
+  <data name="UTILITY:REQUIRED_VALUE" xml:space="preserve">
+    <value>The attribute  '{0}' is always required for node '{1}'</value>
+  </data>
+  <data name="XMLSCHEMA_FAILED_TO_LOAD_TYPE" xml:space="preserve">
+    <value>Failed to load type '{0}'. {1}</value>
+  </data>
+   <data name="XMLSCHEMA_INVALID_ENUMERATION_TYPE" xml:space="preserve">
+    <value>The type '{0}' is not a Enumeration. Only Enumeration type can be defined on the 'enumeration' node of the xml mapping file.</value>
+  </data>
+  <data name="XMLSCHEMA_INVALID_ENUMERATION_CONVERTION_TYPE" xml:space="preserve">
+    <value>The value '{0}' is an invalid Enumeration Convertion Type.</value>
+  </data>
+  <data name="XMLSCHEMA_UNABLE_TO_LOAD_ENUM" xml:space="preserve">
+    <value>Unable to load enumeration of type '{0}'</value>
+  </data>
+  <data name="ORM_STORE_PARTIAL_INITIALIZED_OBJ" xml:space="preserve">
+    <value>Unable to update the database. All the mapped fields for object '{0}' has not fully been initialized. Error encounter when reading field '{1}'. Use ORM.FieldBehavior.WhenEmptySkip or ORM.FieldBehavior.WhenEmptyUseDefault for updating object with not all its field initialized, or load object and then modify its fields.
+    </value>
+    
+  </data>
+</root>

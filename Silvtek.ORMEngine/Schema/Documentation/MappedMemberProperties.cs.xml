@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<document>
+  <title>MappedMemberProperties class</title>
+  <author>Carlos Silva-Santisteban</author>
+  <copyright>Carlos Silva-Santisteban 2006</copyright>
+  <section>
+    <title>Default Initialization</title>
+    <content>
+      The default construtor initialize the class with the following default value:
+      <box>  
+           AcceptNull: false<BR />
+           IsPrimaryKey: false<BR />
+           IsUnique: false<BR />
+           UseDatabaseIdentity:false<BR />
+           Length: -1<BR />
+           DataType: DataType.Undefined<BR />
+           DefaultValue: String.Empty<BR />
+           enumConvertionType: EnumConvertionType.ByName<BR />
+           EnumType: Null<BR />
+      </box>
+    </content>
+  </section>
+
+</document>

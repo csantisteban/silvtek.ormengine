@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<dataMapping>
+
+  <class fullname="Silvtek.ORMEngine.NTesters.XmlMappingTesting.PersonContact">
+    <table name="Person.Contact" connection-name="ORM.TESTERS" />
+    
+    <map member-name="contactID" 
+         column-name="ContactID"  
+         datatype="Int32" 
+         is-key="True" 
+         accepts-null="False" 
+         sequential-type="DbIdentity" >
+         
+         <query-name name="ID" />
+         <query-name name="ContactID" />
+    
+    </map>
+ 
+    <map member-name="namestyle"
+    	 column-name="NameStyle"  
+    	 datatype="Boolean" 
+    	 is-key="False" 
+    	 accepts-null="False" />
+    	 
+    <map member-name="title"
+         column-name="Title" 
+         datatype="String" 
+         is-key="False" 
+         length="8" 
+         default-value="" 
+         accepts-null="True" />
+         
+    <map member-name="firstName" 	
+         column-name="FirstName" 
+         datatype="String" 
+         is-key="False" 
+         length="50" 
+         default-value="" 
+         accepts-null="False" />
+         
+    <map member-name="lastName" 	
+         column-name="LastName" 
+         datatype="String" 
+         is-key="False" 
+         length="50" 
+         default-value="" 
+         accepts-null="False" />
+         
+    <map member-name="suffix" 		
+         column-name="Suffix" 
+         datatype="String" 
+         is-key="False" 
+         length="10" 
+         default-value="" 
+         accepts-null="True" />
+         
+    <map member-name="emailAddress" 	
+      	 column-name="EmailAddress" 
+      	 datatype="String" 
+      	 is-key="False" 
+      	 length="50" 
+      	 default-value="" 
+      	 accepts-null="True" />
+      	 
+    <map member-name="emailPromotion" 	
+         column-name="EmailPromotion" 
+         datatype="Int32" 
+         is-key="False" 
+         default-value="" 
+         accepts-null="False" />
+         
+    <map member-name="phone" 		
+         column-name="Phone" 
+         datatype="String" 
+         is-key="False" 
+         length="25" 
+         default-value="" 
+         accepts-null="True" />
+         
+    <map member-name="passwordHash" 	
+         column-name="PasswordHash" 
+         datatype="String" 
+         is-key="False" 
+         length="128" 
+         default-value="" 
+         accepts-null="False" />
+         
+    <map member-name="passwordSalt"
+         column-name="PasswordSalt" 
+         datatype="String" 
+         is-key="False" 
+         length="10" 
+         default-value="" 
+         accepts-null="False" />
+         
+    <map member-name="additionalContactInfo" 
+         column-name="AdditionalContactInfo" 
+         datatype="Xml" 
+         is-key="False"  
+         default-value="" 
+         accepts-null="True" />
+         
+    <map member-name="rowguid" 
+         column-name="rowguid" 
+         datatype="Guid" 
+         is-key="False"  
+         default-value="" 
+         accepts-null="False" />
+         
+    <map member-name="modifiedDate" 
+         column-name="ModifiedDate" 
+         datatype="DateTime" 
+         is-key="False" 
+         default-value="" 
+         accepts-null="False" />
+
+    <map member-name="PropertyTypes"
+         column-name="PropertyTypes"
+         dataType="Enum"
+         is-key="False"
+         accept-null="False">
+      
+         <enumInfo type="Silvtek.PropertyTypes" convert-by="ByName|ByValue" />
+    </map>
+
+    <map member-name="BinaryFile" column-name="File" dataType="Binary" is-key="False" accept-null="false">
+      <compressProvider type="" assembly=""/>
+    </map>
+
+    <map member-name="Password" column-name="password" dataType="String" is-key="False" accept-null="false">
+      <EncryptionProvider type="" assembly="" password="" salt="" />
+    </map>
+  </class>
+
+</dataMapping>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<dataMapping>
+
+  <class fullname="Silvtek.ORMEngine.NTesters.XmlMappingTesting.Employee">
+    <table name="HumanResources.Employee" connection-name="ORM.TESTERS" />
+    
+    <map column-name="EmployeeID" 	member-name="employeeID"  	accepts-null="False" is-key="True"  sequential-type="DbIdentity" />
+    <map column-name="NationalIDNumber" member-name="nationalID"	accepts-null="False" length="15"/>
+    
+    <map column-name="ContactID" 	member-name="contactID"   	accepts-null="False">
+         <query-name name="ID" />
+         <query-name name="ContactID" />
+    </map>
+    
+    <map column-name="LoginID" 		member-name="loginID"     	accepts-null="False" length="356"/>
+    <map column-name="ManagerID" 	member-name="managerID"   	accepts-null="False" />
+    <map column-name="Title" 		member-name="title"   		accepts-null="False" length="50"/>
+    <map column-name="BirthDate" 	member-name="birthDate"   	accepts-null="False" />
+    <map column-name="MaritalStatus" 	member-name="maritalStatus"	accepts-null="False" />
+    <map column-name="Gender" 		member-name="gender"   		accepts-null="False" />
+    <map column-name="HireDate" 	member-name="hireDate"  	accepts-null="False" />
+    <map column-name="SalariedFlag" 	member-name="salaried"  	accepts-null="False" />
+    <map column-name="VacationHours" 	member-name="vacationHours"   	accepts-null="False" />
+    <map column-name="SickLeaveHours" 	member-name="sickLeaveHours"  	accepts-null="False" />
+    <map column-name="CurrentFlag" 	member-name="current"   	accepts-null="False" />
+    <map column-name="rowguid" 		member-name="rowguid"  		accepts-null="False" />
+    <map column-name="ModifiedDate" 	member-name="modifiedDate"  	accepts-null="False" />
+    
+  </class>
+
+</dataMapping>

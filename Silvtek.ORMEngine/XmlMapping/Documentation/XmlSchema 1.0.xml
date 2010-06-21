@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<dataMapping>
+  
+	<class fullname="">
+    <table name="" connection-name="" />
+    <map member-name="" column-name="" datatype="" length="" default-value="" accepts-null=""
+        sequentialType="Sequential|DbIdentity" is-key="" >
+      <enumInfo type="" convert-by="" />
+      <query-name name="" />
+      <sequenceProvider class="" assembly="" />
+    </map>
+	</class>
+	
+</dataMapping>

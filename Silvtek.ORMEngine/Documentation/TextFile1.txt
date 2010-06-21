@@ -1,0 +1,14 @@
+Notes.
+
+UPDATING A RECORD
+-----------------
+
+ For update a record use the method Save();
+  
+  Conditions:
+    - The object to be update must always be bounded to the database. 
+    - A object is bounded when it is loaded or created.
+    - You can check whether if an object is bounded with the BindingStatus property.
+      i.e: [ORM Object].ObjectInfo.BindingStatus == Bound  
+        
+

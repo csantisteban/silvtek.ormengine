@@ -1,0 +1,337 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{E54AE1D1-5B25-4CAA-A2E8-3A8C15636BDE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Silvtek.ORMEngine</RootNamespace>
+    <AssemblyName>Silvtek.ORMEngine</AssemblyName>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <SccProjectName>Silvtek ORM Engine:%24/1.7/Silvtek.ORMEngine v1.7/Silvtek.ORMEngine</SccProjectName>
+    <SccLocalPath>.</SccLocalPath>
+    <SccAuxPath>100170</SccAuxPath>
+    <SccProvider>Dynamsoft SCM Anywhere Hosted:{2db9c764-2000-41D1-A6C3-704E6C1A3DE2}</SccProvider>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;NET20</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <CodeAnalysisRules>
+    </CodeAnalysisRules>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;NET20</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>2</WarningLevel>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <DocumentationFile>bin\Release\Silvtek.ORMEngine.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Action.cs" />
+    <Compile Include="ActionFailedEventArgs.cs" />
+    <Compile Include="ActionResult.cs" />
+    <Compile Include="ActiontFailedEventHandler.cs" />
+    <Compile Include="AliasAttribute.cs" />
+    <Compile Include="Base32.cs" />
+    <Compile Include="Caching\RecordVersion.cs" />
+    <Compile Include="ColumnActionType.cs" />
+    <Compile Include="CompressAttribute.cs" />
+    <Compile Include="Compression\CompressionProvider.cs" />
+    <Compile Include="Compression\DefaultCompressionProvider.cs" />
+    <Compile Include="Configs\ORMConfigurator.cs" />
+    <Compile Include="DataQuery\Parsers\SingleValueQueryParser.cs" />
+    <Compile Include="DataQuery\SingleValueQuery.cs" />
+    <Compile Include="DigestValidationResult.cs" />
+    <Compile Include="Encryption\DefaultRecordDigestProvider.cs" />
+    <Compile Include="Encryption\RecordDigestProvider.cs" />
+    <Compile Include="MemberAttributes.cs" />
+    <Compile Include="ObjectFormatterProviderAttribute.cs" />
+    <Compile Include="Data\ConnectionInfoList.cs" />
+    <Compile Include="EncryptAttribute.cs" />
+    <Compile Include="DatabaseIdentityAttribute.cs" />
+    <Compile Include="DataQuery\AggregateQuery.cs" />
+    <Compile Include="DataQuery\DeleteQuery.cs" />
+    <Compile Include="DataQuery\ICriteria.cs" />
+    <Compile Include="DataQuery\OrderDirection.cs" />
+    <Compile Include="DataQuery\Parsers\AggregateQueryParser.cs" />
+    <Compile Include="DataQuery\Parsers\DeleteQueryParser.cs" />
+    <Compile Include="DataQuery\QueryBase.cs" />
+    <Compile Include="DataQuery\SimpleFindCriteria.cs" />
+    <Compile Include="Encryption\EncryptionProvider.cs" />
+    <Compile Include="Encryption\DefaultEncryptionProvider.cs" />
+    <Compile Include="IORMObject.cs" />
+    <Compile Include="MSSql\MSSqlFormatter.cs" />
+    <Compile Include="ObjectPooling\InternalPool.cs" />
+    <Compile Include="ObjectPooling\ObjectPoolingException.cs" />
+    <Compile Include="ObjectPooling\Pool.cs" />
+    <Compile Include="ObjectPooling\PoolContext.cs" />
+    <Compile Include="ObjectPooling\PoolManager.cs" />
+    <Compile Include="ORMDefaults.cs" />
+    <Compile Include="ORMEventArgs.cs" />
+    <Compile Include="ORMNull.cs" />
+    <Compile Include="ORMObjectProxy.cs" />
+    <Compile Include="ORMService.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ORMServiceController.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ORMServiceParameterInfo.cs" />
+    <Compile Include="ORMServiceParameterInfoCollection.cs" />
+    <Compile Include="ORMServiceResult.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ORMSerializer.cs" />
+    <Compile Include="DataStream.cs" />
+    <Compile Include="PreserveAttribute.cs" />
+    <Compile Include="QueryProxy.cs" />
+    <Compile Include="DataSourceType.cs" />
+    <Compile Include="Data\ConnectionSettingsBase.cs" />
+    <Compile Include="Data\DefaultConnectionSettings.cs" />
+    <Compile Include="GlobalConstants.cs" />
+    <Compile Include="ORMDiagnostics.cs" />
+    <Compile Include="ORMObjectInfo.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="BindingStatus.cs" />
+    <Compile Include="Caching\CacheItem.cs" />
+    <Compile Include="Caching\CacheItemList.cs" />
+    <Compile Include="Caching\CacheItemRemovalReason.cs" />
+    <Compile Include="Caching\CacheItemRemoveCallback.cs" />
+    <Compile Include="Caching\GlobalReferencesManager.cs" />
+    <Compile Include="Caching\ORMReferencesManager.cs" />
+    <Compile Include="Caching\QueryCache.cs" />
+    <Compile Include="Caching\TimeController.cs" />
+    <Compile Include="ColumnAttribute.cs" />
+    <Compile Include="DataQuery\Aggregate.cs" />
+    <Compile Include="DataQuery\Comparison.cs" />
+    <Compile Include="DataQuery\Parsers\CriteriaItemParser.cs" />
+    <Compile Include="DataQuery\Criterias.cs" />
+    <Compile Include="DataQuery\ISqlGenerator.cs" />
+    <Compile Include="DataQuery\Join.cs" />
+    <Compile Include="DataQuery\Joins.cs" />
+    <Compile Include="DataQuery\JoinType.cs" />
+    <Compile Include="DataQuery\LogicalOperator.cs" />
+    <Compile Include="DataQuery\MemberCriteria.cs" />
+    <Compile Include="DataQuery\MemberNotFoundException.cs" />
+    <Compile Include="DataQuery\Query.cs" />
+    <Compile Include="DataQuery\QueryException.cs" />
+    <Compile Include="DataQuery\ResultColumn.cs" />
+    <Compile Include="DataQuery\ResultRow.cs" />
+    <Compile Include="DataQuery\ResultSet.cs" />
+    <Compile Include="DataQuery\RowLoadedEventArgs.cs" />
+    <Compile Include="DataQuery\RowLoadedEventHandler.cs" />
+    <Compile Include="DataQuery\Parsers\ComparisonHelper.cs" />
+    <Compile Include="DataQuery\Parsers\CriteriaParser.cs" />
+    <Compile Include="DataQuery\Parsers\JoinParser.cs" />
+    <Compile Include="DataQuery\Parsers\MultipleValuesCriteria.cs" />
+    <Compile Include="DataQuery\Parsers\OrderColumns.cs" />
+    <Compile Include="DataQuery\Parsers\QueriedAggregates.cs" />
+    <Compile Include="DataQuery\Parsers\QueriedTypes.cs" />
+    <Compile Include="DataQuery\Parsers\QueryParser.cs" />
+    <Compile Include="DataQuery\Parsers\SingleValueCriteria.cs" />
+    <Compile Include="DataQuery\Parsers\SqlTextCriteria.cs" />
+    <Compile Include="DataQuery\Parsers\SubQueryCriteria.cs" />
+    <Compile Include="DataQuery\Parsers\TwoValuesCriteria.cs" />
+    <Compile Include="DataQuery\SqlText.cs" />
+    <Compile Include="DataType.cs" />
+    <Compile Include="Data\Command.cs" />
+    <Compile Include="Data\Connection.cs" />
+    <Compile Include="Data\ConnectionManager.cs" />
+    <Compile Include="Data\ConnectionNameNotFoundException.cs" />
+    <Compile Include="Data\ConnectionInfo.cs" />
+    <Compile Include="Data\ConnectionStats.cs" />
+    <Compile Include="Data\DataParameter.cs" />
+    <Compile Include="Data\DataParameterCollection.cs" />
+    <Compile Include="Data\DataReader.cs" />
+    <Compile Include="Data\DbTypeInitializationException.cs" />
+    <Compile Include="Data\ConnectionProvider.cs" />
+    <Compile Include="Data\ProviderInitializationException.cs" />
+    <Compile Include="DbDataException.cs" />
+    <Compile Include="EnumConversionType.cs" />
+    <Compile Include="DbTypeFormatter.cs" />
+    <Compile Include="LockORMException.cs" />
+    <Compile Include="MSSqlIdentityAttribute.cs" />
+    <Compile Include="MSSql\MSSqlColumnSchema.cs" />
+    <Compile Include="MSSql\MSSqlProvider.cs" />
+    <Compile Include="MSSql\MSSqlTableSchema.cs" />
+    <Compile Include="MSSql\MSSqlType.cs" />
+    <Compile Include="MySql\MySQLType.cs" />
+    <Compile Include="NativeSchema\ColumnSchema.cs" />
+    <Compile Include="NativeSchema\TableSchema.cs" />
+    <Compile Include="NullAttribute.cs" />
+    <Compile Include="ORM.cs" />
+    <Compile Include="ORMErrorEventArgs.cs" />
+    <Compile Include="ORMErrorEventHandler.cs" />
+    <Compile Include="ORMException.cs" />
+    <Compile Include="ORMObject.cs" />
+    <Compile Include="PrimaryKeyAttribute.cs" />
+    <Compile Include="PrimaryKeysChangedException.cs" />
+    <Compile Include="ProviderType.cs" />
+    <Compile Include="QueryColumnAttribute.cs" />
+    <Compile Include="Querying\Aggregate.cs" />
+    <Compile Include="Querying\Comparison.cs" />
+    <Compile Include="Querying\Criteria.cs" />
+    <Compile Include="Querying\CriteriaList.cs" />
+    <Compile Include="Querying\GroupedCriteria.cs" />
+    <Compile Include="Querying\HavingClause.cs" />
+    <Compile Include="Querying\HavingClauseList.cs" />
+    <Compile Include="Querying\ICriteria.cs" />
+    <Compile Include="Querying\JoinClause.cs" />
+    <Compile Include="Querying\JoinClauseList.cs" />
+    <Compile Include="Querying\JoinType.cs" />
+    <Compile Include="Querying\LogicalOperator.cs" />
+    <Compile Include="Querying\OrderByList.cs" />
+    <Compile Include="Querying\Query.cs" />
+    <Compile Include="Querying\QueryException.cs" />
+    <Compile Include="Querying\QueryHelper.cs" />
+    <Compile Include="Querying\ResultColumn.cs" />
+    <Compile Include="Querying\ResultRow.cs" />
+    <Compile Include="Querying\ResultSet.cs" />
+    <Compile Include="Querying\RowLoadedEventArgs.cs" />
+    <Compile Include="Querying\RowLoadedEventHandler.cs" />
+    <Compile Include="Querying\SingleColumn.cs" />
+    <Compile Include="Querying\SingleMemberList.cs" />
+    <Compile Include="Querying\SqlText.cs" />
+    <Compile Include="ReadOnlyException.cs" />
+    <Compile Include="RecordDigestAttribute.cs" />
+    <Compile Include="Resource.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resource.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Resources.cs" />
+    <Compile Include="Schema\MapMemberList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Schema\ObjectSchemaInfoLoader.cs" />
+    <Compile Include="Schema\MapUtility.cs" />
+    <Compile Include="Schema\MapMember.cs" />
+    <Compile Include="Schema\MapMemberProperties.cs" />
+    <Compile Include="Schema\MemberField.cs" />
+    <Compile Include="Schema\MemberFieldList.cs" />
+    <Compile Include="Schema\ObjectAttributesSchemaInfo.cs" />
+    <Compile Include="Schema\ObjectSchemaInfo.cs" />
+    <Compile Include="TimestampAttribute.cs" />
+    <Compile Include="XmlMapping\ObjectXmlSchemaException.cs" />
+    <Compile Include="XmlMapping\ObjectXmlSchemaInfo.cs" />
+    <Compile Include="Schema\ORMInfoPool.cs" />
+    <Compile Include="Schema\OrmMappingException.cs" />
+    <Compile Include="Schema\QueryNames.cs" />
+    <Compile Include="Schema\SqlBuilder.cs" />
+    <Compile Include="Schema\StringBuffer.cs" />
+    <Compile Include="Schema\StringBufferException.cs" />
+    <Compile Include="Schema\UpdateChangeDelegate.cs" />
+    <Compile Include="SequenceAttribute.cs" />
+    <Compile Include="SequenceProvider.cs" />
+    <Compile Include="TableAttribute.cs" />
+    <Compile Include="Transaction.cs" />
+    <Compile Include="TypeCollection.cs" />
+    <Compile Include="UniqueAttribute.cs" />
+    <Compile Include="Utility.cs" />
+    <Compile Include="XmlSerializerUtil.cs" />
+    <Compile Include="Xml\ORMServiceResult.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Xml\ORMServicesResults.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resource.resx">
+      <SubType>Designer</SubType>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resource.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="_prj.buildsupport\buildnumber.txt" />
+    <Content Include="_prj.buildsupport\assemblyversion.net-1.1.txt" />
+    <Content Include="_prj.buildsupport\assemblyversion.net-2.0.txt" />
+    <Content Include="Documentation\main.html" />
+    <Content Include="Documentation\TextFile1.txt" />
+    <Content Include="FileHeader.txt" />
+    <Content Include="Schema\Documentation\MappedMemberProperties.cs.xml" />
+    <Content Include="XmlMapping\Documentation\SampleTwo.xml" />
+    <Content Include="XmlMapping\Documentation\SampleOne.xml" />
+    <Content Include="XmlMapping\Documentation\XmlSchema 1.0.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Configs\Documentation\Connections.config" />
+    <None Include="XmlMapping\Documentation\ORM-Mapping-Schema.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="XmlMapping\Documentation\ORM-Mapping-Schema.xsx">
+      <DependentUpon>ORM-Mapping-Schema.xsd</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DataQuery\Parsers\NUnitTesters\" />
+    <Folder Include="Oracle\" />
+    <Folder Include="_prj.documents\" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
