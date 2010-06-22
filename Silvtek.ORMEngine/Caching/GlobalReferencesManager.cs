@@ -30,9 +30,11 @@ namespace Silvtek.ORMEngine.Caching
       
         private long instanceCounter;
         private bool isCleaning;
-		private readonly bool isTimerStarted;
-        private readonly Hashtable ormContainer;
-        private readonly Object mutex;
+		private  bool isTimerStarted;
+        private readonly Hashtable container;
+	    private readonly Hashtable mutexCollection;
+
+        private static readonly Object mutex  = new object();
 		private readonly Timer cleaningTimer;
 
        #endregion
@@ -68,23 +70,45 @@ namespace Silvtek.ORMEngine.Caching
             if (orm.ObjectInfo.MappedMembers.HasBinaryMember) return;
            
             string key = orm.GetRecordIdentifier();
+
             // Do not add if the object does not have an identifier.
             if (key == null || key.Length == 0) return;
 
 
-			Debug.Assert(key != null && key.Length > 0, "Key passed to the global reference manager is invalid: ["+key+"]");
+			// Debug.Assert(key != null && key.Length > 0, "Key passed to the global reference manager is invalid: ["+key+"]");
 			
-			ORMReferencesManager recordManager = (ORMReferencesManager)ormContainer[key];
-			if (recordManager == null)
-			{
-				lock(mutex)
-				{
-					recordManager =	new ORMReferencesManager(key, orm);
-					ormContainer.Add(key, recordManager);
-				}
-			}
 
-            WeakReference reference = new WeakReference(orm.SourceObject);			
+			ORMReferencesManager recordManager = (ORMReferencesManager)container[key];
+
+            if (recordManager == null)
+            {
+                try
+                {
+                    object keymutex = mutexCollection[key];
+
+                    if (keymutex == null)
+                    {
+                        keymutex = new object();
+                        mutexCollection[key] = keymutex;
+                    }
+
+                    lock (keymutex)
+                    {
+                        recordManager = new ORMReferencesManager(key, orm);
+                        container[key] = recordManager;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    //Trace.WriteLine(ex.Message);
+                    return;
+                }
+
+            }
+
+      	    WeakReference reference = new WeakReference(orm.SourceObject);	
+		
+
 			recordManager.Add(reference);
 			Interlocked.Increment(ref instanceCounter);
 			StartTimer();
@@ -98,13 +122,26 @@ namespace Silvtek.ORMEngine.Caching
 		{
             if (!ORMConfigurator.UpdateBroadCastingEnabled) return;
 			string  key = obj.GetRecordIdentifier();
-			if (ormContainer.Contains(key))
+			if (container.Contains(key))
 			{
-				ORMReferencesManager doController = (ORMReferencesManager)ormContainer[key];
-				if (doController != null)
+				ORMReferencesManager recordManager = (ORMReferencesManager)container[key];
+				if (recordManager != null)
 				{
-					Debug.WriteLine("About to broadcast update for: "+key);
-					doController.BroadcastUpdate(obj);
+                    try
+                    {
+                        lock (recordManager.SyncRoot)
+                        {
+                            recordManager.BroadcastUpdate(obj);
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        Trace.WriteLine("Failed to broadcast update. "+ex.Message);
+
+#if DEBUG
+                    throw;
+#endif
+                    }
 				}
 			}
 
@@ -118,12 +155,25 @@ namespace Silvtek.ORMEngine.Caching
 		internal void BroadcastRemoval(ORMObject obj)
 		{
 			string key = obj.GetRecordIdentifier();
-			if (ormContainer.Contains(key))
+			if (container.Contains(key))
 			{
-				ORMReferencesManager doController = (ORMReferencesManager)ormContainer[key];
-				if (doController != null)
+				ORMReferencesManager recordManager = (ORMReferencesManager)container[key];
+				if (recordManager != null)
 				{
-					doController.BroadcastRemoval(obj);
+                    try
+                    {
+                        lock (recordManager.SyncRoot)
+                        {
+                            recordManager.BroadcastRemoval(obj);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine("Failed to record deletion . " + ex.Message);
+#if DEBUG
+                    throw;
+#endif
+                    }
 				}
 			}
 			
@@ -138,15 +188,15 @@ namespace Silvtek.ORMEngine.Caching
 		{
             if (!ORMConfigurator.GlobalCacheEnabled) return null;
           
-			object dobj = null;
+			object ormObject = null;
           
-			if (ormContainer.Contains(ormKey))
+			if (container.Contains(ormKey))
 			{
-				ORMReferencesManager doRM = (ORMReferencesManager)ormContainer[ormKey];
-				dobj = doRM.Get();
+				ORMReferencesManager doRM = (ORMReferencesManager)container[ormKey];
+				ormObject = doRM.Get();
 			}
            
-			return dobj;
+			return ormObject;
 		}
 
 		/// <summary>
@@ -154,22 +204,15 @@ namespace Silvtek.ORMEngine.Caching
 		/// </summary>
         /// <param name="ormKey">The record key.</param>
 		/// <returns></returns>
-		internal ORMReferencesManager GetManagerInstance(string ormKey)
+        internal ORMReferencesManager GetManagerInstance(string ormKey)
 		{
-			ORMReferencesManager dom = (ORMReferencesManager)ormContainer[ormKey];
-			if (dom == null)
-			{
-                lock (ormContainer.SyncRoot)
-                {
-                    dom = new ORMReferencesManager(ormKey, null);
-                    ormContainer[ormKey] = dom;
-                }
-            }
-
-			return dom;
+		    ORMReferencesManager dom = (ORMReferencesManager) container[ormKey];
+		
+		    return dom;
 		}
 
-       // returns the unique instance of this class.
+
+	    // returns the unique instance of this class.
 		private static GlobalReferencesManager GetSingleton()
 		{
 			if (globalmanager != null)return globalmanager;
@@ -203,8 +246,8 @@ namespace Silvtek.ORMEngine.Caching
 			isTimerStarted = false;
             recordVersionFileCleanedDateTime = DateTime.MinValue;
 
-			ormContainer = new Hashtable(256);
-			mutex = new object();
+			container = new Hashtable(256);
+            mutexCollection = new Hashtable(256);
 
 			TimerCallback callback = new TimerCallback(CleanCollectedObjects);
 			cleaningTimer = new Timer(callback, null, Timeout.Infinite, Timeout.Infinite);
@@ -215,6 +258,7 @@ namespace Silvtek.ORMEngine.Caching
 			if(!isTimerStarted)
 			{
 				cleaningTimer.Change(timerFrequency, timerFrequency);
+                isTimerStarted = true;
 			}
 		}
 
@@ -222,6 +266,7 @@ namespace Silvtek.ORMEngine.Caching
 		{
 		    cleaningTimer.Change(Timeout.Infinite, Timeout.Infinite);
 			timerFrequency = DEFAULT_TIMER_FREQUENCY;
+		    isTimerStarted = false;
 		}
 
         //private void IncreaseFrequency()
@@ -239,95 +284,122 @@ namespace Silvtek.ORMEngine.Caching
 
 
 
-		private void CleanCollectedObjects(object state)
-		{
-			
-			if (isCleaning)
-			{
-				//IncreaseFrequency();
-				return;
-			}
+        private void CleanCollectedObjects(object state)
+        {
 
-			isCleaning = true;
-			long removedObjects = 0;
-             
-			Trace.WriteLine(Utility.GetResourceString("TRACE:START_REF_CLEANING", ormContainer.Count, instanceCounter, DateTime.Now),
-				            Resources.TRACE_CATEGORY);
-
-			int recordCount = ormContainer.Count;
-			string[] keys = new string[recordCount];
-			
-			int counter = 0;
-           
-			ArrayList keyList = new ArrayList(ormContainer.Keys);
-			
-			for (int i = 0; i < recordCount; i++)
-			{
-				// Get Key.
-				string key = (string)keyList[i];
-
-				ORMReferencesManager refManager = (ORMReferencesManager)ormContainer[key];
-
-#if DEBUG
-				//Save Number of ref (For Tracing only)
-				int numberOfReferences = refManager.Count;
-#endif
-				long removedCollectedInstances = refManager.CleanCollectedInstances();
-
-				removedObjects = removedObjects + removedCollectedInstances;
-#if DEBUG
-				Debug.WriteLine(Utility.GetResourceString("TRACE:NUMBER_OF_REF_PER_DATAOBJECT", key, numberOfReferences, removedCollectedInstances,
-					           (numberOfReferences - removedCollectedInstances), DateTime.Now), Resources.TRACE_CATEGORY);
-#endif
-
-				if (refManager.Count == 0)keys[counter] = key;
-				counter++;
-			}
-
-			lock(mutex)
-			{
-				for(int j = 0; j < keys.Length; j++)
-				{
-					if (keys[j] == null)continue;
-					ormContainer.Remove(keys[j]);
-				}
-
-				if (ormContainer.Count == 0)
-				{
-					StopTimer();
-				}
-			}
-
-			Trace.WriteLine(Utility.GetResourceString("TRACE_END_CLEANING_REF", ormContainer.Count, instanceCounter,
-				removedObjects, DateTime.Now), Resources.TRACE_CATEGORY);
-
-			//TODO: Use some kind of synchronization mechanims for the "instanceCounter Variable"
-			instanceCounter = instanceCounter - removedObjects;
-
-            if (ORMConfigurator.UseBalancerShare)
+            if (isCleaning)
             {
-                TimeSpan diff = DateTime.Now - recordVersionFileCleanedDateTime;
-                if (diff.Hours > 23)
+                return;
+            }
+
+            try
+            {
+                isCleaning = true;
+                long removedObjects = 0;
+
+                Debug.WriteLine(Utility.GetResourceString("TRACE:START_REF_CLEANING", container.Count, instanceCounter, DateTime.Now),
+                               Resources.TRACE_CATEGORY);
+
+                int recordCount = container.Count;
+                string[] keys = new string[recordCount];
+
+                int counter = 0;
+
+                ArrayList keyList = new ArrayList(container.Keys);
+
+                for (int i = 0; i < recordCount; i++)
                 {
-                    string[] files = Directory.GetFiles(ORMConfigurator.BalancerShare, "*." + GlobalConstants.ORM_VERSION_CONTROL_EXTENSION);
-                    foreach (string fileName in files)
+                    // Get Key.
+                    string key = (string) keyList[i];
+
+                    ORMReferencesManager refManager = (ORMReferencesManager) container[key];
+
+                    if (refManager == null) continue;
+
+#if DEBUG
+                    //Save Number of ref (For Tracing only)
+                    int numberOfReferences = refManager.Count;
+#endif
+              
+                    lock (refManager.SyncRoot)
                     {
-                        FileInfo fileInfo = new FileInfo(fileName);
-                        fileInfo.Refresh();
-                        if (fileInfo.LastAccessTime < DateTime.Now.AddHours(-23))
+                       long removedCollectedInstances = refManager.CleanCollectedInstances();
+                       removedObjects = removedObjects + removedCollectedInstances;
+                       if (refManager.Count == 0) keys[counter] = key;
+
+#if DEBUG
+                       Debug.WriteLine(Utility.GetResourceString("TRACE:NUMBER_OF_REF_PER_DATAOBJECT", key, numberOfReferences, removedCollectedInstances,
+                                                                 (numberOfReferences - removedCollectedInstances), DateTime.Now), Resources.TRACE_CATEGORY);
+#endif  
+                    }
+
+                    counter++;
+                    
+
+                }
+
+
+                for (int j = 0; j < keys.Length; j++)
+                {
+                    if (keys[j] == null) continue;
+                    container.Remove(keys[j]);
+                    mutexCollection.Remove(keys[j]);
+                }
+
+                if (container.Count == 0)
+                {
+                    StopTimer();
+                }
+
+
+                //Trace.WriteLine(Utility.GetResourceString("TRACE_END_CLEANING_REF", ormContainer.Count, instanceCounter,
+                //                                          removedObjects, DateTime.Now), Resources.TRACE_CATEGORY);
+
+#if NET20
+                Interlocked.Add(ref instanceCounter, (removedObjects * -1));
+                if (instanceCounter < 0) Interlocked.Exchange(ref instanceCounter, 0);
+#endif
+#if NET11
+                //long tmpInstanceCounter = instanceCounter - removedObjects;
+                //Interlocked.Exchange(ref instanceCounter, tmpInstanceCounter);
+                instanceCounter = instanceCounter - removedObjects;
+                if (instanceCounter < 0)instanceCounter = 0;
+#endif
+
+
+                if (ORMConfigurator.UseBalancerShare)
+                {
+                    TimeSpan diff = DateTime.Now - recordVersionFileCleanedDateTime;
+                    if (diff.Hours > 23)
+                    {
+                        string[] files = Directory.GetFiles(ORMConfigurator.BalancerShare, "*." + GlobalConstants.ORM_VERSION_CONTROL_EXTENSION);
+                        foreach (string fileName in files)
                         {
-                            fileInfo.Delete();
+                            FileInfo fileInfo = new FileInfo(fileName);
+                            fileInfo.Refresh();
+                            if (fileInfo.LastAccessTime < DateTime.Now.AddHours(-23))
+                            {
+                                fileInfo.Delete();
+                            }
                         }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Trace.WriteLine("Error while cleaning dead instances. " +ex.Message);
+            }
+            finally
+            {
+                isCleaning = false;
+            }
 
-			isCleaning = false;
-			
-			 
-		}
+            
 
-     }
+
+        }
+
+	}
 
 
 

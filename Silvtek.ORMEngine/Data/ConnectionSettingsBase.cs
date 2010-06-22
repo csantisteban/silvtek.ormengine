@@ -80,6 +80,11 @@ namespace Silvtek.ORMEngine.Data
             get;
         }
 
+        public abstract int CommandTimeout
+        { 
+            get;
+        }
+
         public ConnectionProvider GetConnectionProvider()
         {
 

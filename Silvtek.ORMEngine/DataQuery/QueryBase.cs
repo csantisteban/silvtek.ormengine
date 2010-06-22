@@ -4,6 +4,7 @@
 #endregion
 
 using System;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Security.Cryptography;
 using Silvtek.ORMEngine.Schema;
@@ -12,12 +13,17 @@ using Silvtek.ORMEngine.Caching;
 
 namespace Silvtek.ORMEngine.DataQuery
 {
+    //public delegate ResultSet ExecuteCallback(ResultSet resultset, IAsyncResult result)
+
+    public delegate QueryBase QueryExecuteCaller(bool realtime, TimeController controller);
+
     /// <summary>
     /// Represents the base query class for all queries.
     /// </summary>
     public abstract class QueryBase
     {
-
+        
+      
         private bool                isCaseSensitive;
         private bool                distinctKeyword;
         private Criterias           criterias;
@@ -26,7 +32,7 @@ namespace Silvtek.ORMEngine.DataQuery
         private QueriedTypes        types;
         private QueriedAggregates   queriedAggregates;
         private OrderColumns        orderColumns;
-
+        
         /// <summary>
         /// Gets or sets whether the query will be case sensitive.
         /// </summary>
@@ -225,9 +231,23 @@ namespace Silvtek.ORMEngine.DataQuery
             byte[] bytes = Encoding.UTF8.GetBytes(sql);
             SHA1Managed sha1 = new SHA1Managed();
             byte[] result = sha1.ComputeHash(bytes);
-            string suffix = Base32.ToBase32String(result);
+            string identifier = Utility.BytesToHex(result);
 
-            return String.Format("{0}:{1}", type.FullName, suffix);
+            return identifier;
+        }
+
+        /// <summary>
+        /// Gets the query unique identifier. This unique identifier is generated
+        /// depending of sql. 
+        /// </summary>
+        /// <returns></returns>
+        public string GetIdentifier()
+        {
+            string sql = GetSql();
+            if (types.Count == 0) return String.Empty;
+            if (types[0] == null) return String.Empty;
+            Type type = this.types[0].Type;
+            return GenerateQueryIdentifier(type, sql);
         }
 
         /// <summary>
@@ -236,6 +256,76 @@ namespace Silvtek.ORMEngine.DataQuery
         public static void ClearCache()
         {
             QueryCache.EmptyCache();
+        }
+
+        private QueryBase InternalExecuteAsync(bool realtime, TimeController controller)
+        {
+            Execute(realtime, controller);
+            return this;
+        }
+
+        /// <summary>
+        /// Begins the execute a query asynchronously
+        /// </summary>
+        /// <param name="span">The time span that this query can be cached..</param>
+        /// <param name="slideTime">if set to <c>true</c> if the time slides with every hit</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        /// <returns></returns>
+        public IAsyncResult BeginExecute(TimeSpan span, bool slideTime, AsyncCallback callback, object state)
+        {
+            QueryExecuteCaller ormActionDelegate = new QueryExecuteCaller(InternalExecuteAsync);
+            TimeController controller = new TimeController(span, slideTime);
+            return ormActionDelegate.BeginInvoke(false, controller, callback, state);
+        }
+
+        /// <summary>
+        /// Begins the execute a query asynchronously
+        /// </summary>
+        /// <param name="expirationTime">The expiration date time for of this query. It will be removed from the cached..</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        /// <returns></returns>
+        public IAsyncResult BeginExecute(DateTime expirationTime, AsyncCallback callback, object state)
+        {
+            QueryExecuteCaller ormActionDelegate = new QueryExecuteCaller(InternalExecuteAsync);
+            TimeController controller = new TimeController(expirationTime);
+            return ormActionDelegate.BeginInvoke(false, controller, callback, state);
+        }
+
+        /// <summary>
+        /// Begins the execute a query asynchronously
+        /// </summary>
+        /// <param name="realtime">if set to <c>true</c> it will get records directly from database skipping cache..</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        /// <returns></returns>
+        public IAsyncResult BeginExecute(bool realtime, AsyncCallback callback, object state)
+        {
+            QueryExecuteCaller ormActionDelegate = new QueryExecuteCaller(InternalExecuteAsync);
+            TimeController controller = TimeController.Default;
+            return ormActionDelegate.BeginInvoke(realtime, controller, callback, state);
+        }
+
+        /// <summary>
+        /// Begins the execute a query asynchronously.
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        /// <returns></returns>
+        public IAsyncResult BeginExecute(AsyncCallback callback, object state)
+        {
+            QueryExecuteCaller ormActionDelegate = new QueryExecuteCaller(InternalExecuteAsync);
+            TimeController controller = TimeController.Default;
+            return ormActionDelegate.BeginInvoke(false, controller, callback, state);
+        }
+
+        public QueryBase EndExecute(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            QueryExecuteCaller ormActionDelegate = (QueryExecuteCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result); 
         }
 
         #region -- Execute Methods --
@@ -278,7 +368,9 @@ namespace Silvtek.ORMEngine.DataQuery
             Execute(false);
         }
 
+        
         #endregion 
+
 
         internal abstract void Execute(bool realtime, TimeController controller);
         public abstract string GetSql();

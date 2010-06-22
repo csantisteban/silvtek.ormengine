@@ -1,8 +1,15 @@
+#region Copyright
+// Copyright (c) 2002-2014 Carlos Silva-Santisteban. All rights reserved.
+// See LICENSE in the repository root.
+#endregion
+
 using System;
-using System.Diagnostics;
 
 namespace Silvtek.ORMEngine
 {
+    /// <summary>
+    ///  Creates a ORM proxy from a object. The wrapped object must be a valid Data Object.
+    /// </summary>
     public sealed class ORMObjectProxy
     {
         #region -- Event Declarations --
@@ -12,20 +19,57 @@ namespace Silvtek.ORMEngine
             get { return ormObject; }
         }
 
+        public object BoundObject
+        {
+            get { return ormObject.SourceObject; }
+        }
+
+        /// <summary>
+        /// Occurs before a record is created in the database.
+        /// </summary>
         public event ORMEventHandler BeforeCreated;
+
+
+        /// <summary>
+        /// Occurs after a record is created in the database.
+        /// </summary>
         public event ORMEventHandler AfterCreated;
+
+        /// <summary>
+        /// Occurs when [before saved].
+        /// </summary>
+        
         public event ORMEventHandler BeforeSaved;
+        /// <summary>
+        /// Occurs when [after saved].
+        /// </summary>
+        
         public event ORMEventHandler AfterSaved;
+        /// <summary>
+        /// Occurs when [before removed].
+        /// </summary>
+        
         public event ORMEventHandler BeforeRemoved;
+        /// <summary>
+        /// Occurs when [after removed].
+        /// </summary>
+        
         public event ORMEventHandler AfterRemoved;
+        /// <summary>
+        /// Occurs when [before loaded].
+        /// </summary>
+
         public event ORMEventHandler BeforeLoaded;
+        /// <summary>
+        /// Occurs when [after loaded].
+        /// </summary>
         public event ORMEventHandler AfterLoaded;
 
         [NonSerialized]
         private bool synchronized;
 
         private readonly object obj;
-        private ORMObject ormObject;
+        private readonly ORMObject ormObject;
         #endregion
 
         [NonSerialized]
@@ -33,23 +77,39 @@ namespace Silvtek.ORMEngine
 
 
 
+        /// <summary>
+        /// Gets the object.
+        /// </summary>
+        /// <value>The object.</value>
         public object Object
         {
             get { return obj; }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether [cancel events].
+        /// </summary>
+        /// <value><c>true</c> if [cancel events]; otherwise, <c>false</c>.</value>
         public bool CancelEvents
         {
             get { return cancelEvents; }
             set { cancelEvents = value; }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="ORMObjectProxy"/> is synchronized.
+        /// </summary>
+        /// <value><c>true</c> if synchronized; otherwise, <c>false</c>.</value>
         public bool Synchronized
         {
             get { return synchronized; }
             set { synchronized = value; }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ORMObjectProxy"/> class.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
         public ORMObjectProxy(object obj)
         {
             this.obj = obj;
@@ -142,13 +202,13 @@ namespace Silvtek.ORMEngine
                 lock (ormObject.SyncRoot)
                 {
                     ormObject.Save(load);
-                    Trace.WriteLineIf(ormObject.Result != ActionResult.Succeed, "failed to update " + obj.GetType().FullName + ". result: " + ormObject.Result);
+              //      Trace.WriteLineIf(ormObject.Result != ActionResult.Succeed, "failed to update " + obj.GetType().FullName + ". result: " + ormObject.Result);
                 }
             }
             else
             {
                 ormObject.Save(load);
-                Trace.WriteLineIf(ormObject.Result != ActionResult.Succeed, "failed to update " + obj.GetType().FullName + ". result: " + ormObject.Result);
+            //    Trace.WriteLineIf(ormObject.Result != ActionResult.Succeed, "failed to update " + obj.GetType().FullName + ". result: " + ormObject.Result);
 
             }
 

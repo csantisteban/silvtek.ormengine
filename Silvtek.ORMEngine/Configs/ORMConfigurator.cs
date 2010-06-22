@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Xml;
 using Silvtek.ORMEngine.Data;
 
@@ -23,6 +24,7 @@ namespace Silvtek.ORMEngine.Configs
         private string tempFolder;
         private bool globalCacheEnabled;
         private bool changeBroadcastingEnabled;
+        private Encoding defaultEncoding;
        
         private int buffersize;
         private int queryCacheTimeMs;
@@ -128,11 +130,23 @@ namespace Silvtek.ORMEngine.Configs
             get { return Singleton.queryCacheTimeMs; }
         }
 
+        public static Encoding DefaultEncoding
+        {
+            get { return Singleton.defaultEncoding; }
+            set { Singleton.defaultEncoding = value; }
+        }
+
         private ORMConfigurator()
         {
             buffersize = 5120;
             changeBroadcastingEnabled = true;
             globalCacheEnabled = true;
+            this.balancerShare = String.Empty;
+            this.mapFilePath = String.Empty;
+            this.defaultEncoding = Encoding.ASCII;
+            this.queryCacheTimeMs = 800;
+            this.workingFolder = String.Empty;
+            
             LoadConfigurations();
         }
 
@@ -218,20 +232,6 @@ namespace Silvtek.ORMEngine.Configs
             Singleton.buffersize = newSize;
         }
 
-        //internal static void Load()
-        //{
-        //    if (singleton == null)
-        //    {
-        //        lock (typeof(ORMConfigurator))
-        //        {
-        //            if (singleton == null)
-        //            {
-        //                singleton = new ORMConfigurator();
-        //            }
-        //        }
-        //    }
-        //}
-
         #region -- Private Methods -- 
 
         // Load the Connection.config xml file.
@@ -263,6 +263,7 @@ namespace Silvtek.ORMEngine.Configs
             LoadUpdateBroadcastConfiguration(confXml);
             LoadBufferSize(confXml);
             LoadQueryCacheDefaultTime(confXml);
+            LoadEncodingType(confXml);
             
 
             // load declared connections.
@@ -296,6 +297,39 @@ namespace Silvtek.ORMEngine.Configs
                 string exMsg = Utility.GetResourceString("CONNECTION_MANAGER:MAP_FILE_PATH_NOT_FOUND", mapFilePath);
                 throw new ORMException(exMsg);
             }
+
+        }
+
+        private void LoadEncodingType(XmlNode node)
+        {
+            const string encodingXpath = "/dataSettings/Encoding";
+            XmlNode mapFileNode = node.SelectSingleNode(encodingXpath);
+
+            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
+            if (mapFileNode == null)
+            {
+
+                defaultEncoding = Encoding.Default;
+                return;
+
+            }
+
+            string encodingString = Utility.GetAttributeValue(mapFileNode, "value");
+           
+            
+
+            if (encodingString == null || encodingString.Length == 0) return;
+
+            Encoding tmpEncoding = Encoding.GetEncoding(encodingString);
+
+
+            if (tmpEncoding == null)
+            {
+                string exMsg = String.Format("Invalid encoding name. Value: {0}", tmpEncoding);
+                throw new ORMException(exMsg);
+            }
+
+            defaultEncoding = tmpEncoding;
 
         }
 

@@ -20,6 +20,12 @@ namespace Silvtek.ORMEngine.Schema
         private readonly ListDictionary list;
         private bool changed;
 
+        /// <summary>
+        /// Gets a value indicating whether this instance has changes.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has changes; otherwise, <c>false</c>.
+        /// </value>
         public bool HasChanges
         {
             get { return changed; }
@@ -55,13 +61,13 @@ namespace Silvtek.ORMEngine.Schema
             {
                 MapMember mapMember = info.MappedMembers[i];
                 MemberField memberField = new MemberField(mapMember, sourceobject);
-                memberField.Changed += new UpdateChangeDelegate(memberField_Changed);
+                memberField.Changed += new UpdateChangeDelegate(MemberFieldChanged);
                 Add(memberField);
             }
 
         }
 
-        void memberField_Changed(string memberName)
+        void MemberFieldChanged(string memberName)
         {
             this.changed = true;
         }
@@ -71,9 +77,6 @@ namespace Silvtek.ORMEngine.Schema
         ///<summary>
         /// Adds a column and its value in this collection.
         ///</summary>
-        ///<param name="name">
-        /// The column name.
-        ///</param>
         ///<param name="field">
         /// The <see cref="MemberField" /> to add.
         ///</param>
@@ -82,6 +85,7 @@ namespace Silvtek.ORMEngine.Schema
         ///</exception>
         private void Add(MemberField field)
         {
+            if (field == null) return;
            //lock(mutex)
            //{
               // field.RegisterUpdateNotify(updateChange);
@@ -144,6 +148,10 @@ namespace Silvtek.ORMEngine.Schema
 
 
 
+        /// <summary>
+        /// Copies this instance.
+        /// </summary>
+        /// <returns></returns>
         public MemberFieldList Copy()
         {
             MemberFieldList clon = new MemberFieldList();

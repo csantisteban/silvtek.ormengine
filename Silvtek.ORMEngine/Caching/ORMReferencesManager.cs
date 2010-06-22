@@ -22,16 +22,17 @@ namespace Silvtek.ORMEngine.Caching
 	internal class ORMReferencesManager
 	{
 	
+        public static object mutex = new object();
 		[NonSerialized]
-        private readonly Hashtable instances;
+        private readonly ArrayList instances;
         private readonly string identifier;
 		private readonly object syncRoot = new Object();
 		private object staticReference;
         private RecordVersion currentVersion;
         private readonly Type type;
 
-        [NonSerialized]
-        private int seed;
+       // [NonSerialized]
+       // private int seed;
 
         ///<summary>
         /// Gets the number of instances currently stored.
@@ -55,11 +56,24 @@ namespace Silvtek.ORMEngine.Caching
           get {return identifier;}
         }
 
+        /// <summary>
+        /// Gets the <see cref="Type"></see> that the Manager holds
+        /// </summary>
+        /// <value>The type.</value>
 	    internal Type Type
 	    {
 	        get { return type; }
 	    }
 
+	    internal object SyncRoot
+	    {
+	        get { return syncRoot; }
+	    }
+
+	    /// <summary>
+        /// Gets the current version.
+        /// </summary>
+        /// <returns></returns>
 	    internal RecordVersion GetCurrentVersion()
         {
             return currentVersion; 
@@ -73,7 +87,7 @@ namespace Silvtek.ORMEngine.Caching
         {
           
             this.identifier = identifier;
-            instances = new Hashtable(128);
+            instances = new ArrayList(255);
 
             if (obj != null)
             {
@@ -126,11 +140,11 @@ namespace Silvtek.ORMEngine.Caching
            	
              if (dobj != null)
              {		
-				 int newSeed = Interlocked.Increment(ref seed);
+				// int newSeed = Interlocked.Increment(ref seed);
 				 //dobj.ReferenceID = newSeed;
                  if (dobj is ORMObject)
                  {
-                     ((ORMObject)dobj).SetSyncRoot(syncRoot);
+                     ((ORMObject)dobj).SetSyncRoot(SyncRoot);
                  }
 
                  if (staticReference == null)
@@ -145,33 +159,11 @@ namespace Silvtek.ORMEngine.Caching
                      }
                  }
 
-                 instances.Add(newSeed, weak);           	 
+                 instances.Add(weak);
+                 //instances.Add(newSeed, weak);           	 
              }
            }
         }
-
-        //private void AddStaticReference(WeakReference wk)
-        //{
-        //    if (staticReference == null)
-        //    {
-        //        try
-        //        {
-        //            lock(this)
-        //            {
-        //                Trace.WriteLine("Adding static reference from weak reference", Resources.TRACE_CATEGORY);
-        //                ORMObject dobj = (ORMObject)wk.Target;
-        //                staticReference = dobj.InternalCopy();
-        //                //staticReference.ReferenceID = -1;
-        //                staticReference.SetSyncRoot(syncRoot);
-        //            }
-        //        }
-        //        catch(InvalidOperationException)
-        //        {
-        //            staticReference = null;
-        //        }
-        //    }
-
-        //}
 
 		/// <summary>
 		/// Broadcast update to all references.
@@ -230,7 +222,8 @@ namespace Silvtek.ORMEngine.Caching
 		        return;
 		    }
 
-		    ArrayList references = new ArrayList(instances.Values);
+            ArrayList references = new ArrayList(instances);
+		    //ArrayList references = new ArrayList(instances.Values);
 
             for (int i = 0; i < references.Count; i++)
             {
@@ -257,7 +250,7 @@ namespace Silvtek.ORMEngine.Caching
                 {
 
                     // Check if has changes against the previous version;
-                    bool isDirty = ORM.HasDifferentValues(this.staticReference, obj);
+                    bool isDirty = ORM.AreDifferent(this.staticReference, obj);
                     if (isDirty)
                     {
                         
@@ -271,7 +264,7 @@ namespace Silvtek.ORMEngine.Caching
                     }
 
                     // Update the values from the actual object.
-                    bool hasDifferentValues = ORM.HasDifferentValues(doSource, obj);
+                    bool hasDifferentValues = ORM.AreDifferent(doSource, obj);
                     //Debug.WriteLine(" Reference #" + dobj.ReferenceID + " has binding changes = " + dobj.HasBindingChanged);
                     if (hasDifferentValues)
                     {
@@ -294,7 +287,7 @@ namespace Silvtek.ORMEngine.Caching
 	    /// <summary>
 		/// Broadcast that the data has been removed from the database (Deleted)
 		/// </summary>
-		/// <param name="doSource">The object that had removed the data.</param>
+        /// <param name="sourceObject">The object that had removed the data.</param>
         internal void BroadcastRemoval(Object sourceObject)
 	    {
             if (!ORMConfigurator.UpdateBroadCastingEnabled) return;
@@ -317,8 +310,8 @@ namespace Silvtek.ORMEngine.Caching
 
 	        }
 
-
-	        ArrayList references = new ArrayList(instances.Values);
+            //ArrayList references = new ArrayList(instances.Values);
+	        ArrayList references = new ArrayList(instances);
 
 	        for (int i = 0; i < references.Count; i++)
 	        {
@@ -342,7 +335,6 @@ namespace Silvtek.ORMEngine.Caching
 
 	            ORMObject tmp = (ORMObject) storedreference;
 
-	            //if (dobj != null &&  doSource.GetHashCode() != dobj.GetHashCode())
                 if (!object.ReferenceEquals(sourceObject, storedreference))
 	            {
 	                try
@@ -417,72 +409,25 @@ namespace Silvtek.ORMEngine.Caching
 			if (instances.Count == 0)return 0;
 			int counter = 0;
 
-			ArrayList list = new ArrayList(instances.Keys);
-			int listCount = list.Count;
+            int listCount = instances.Count;
 
 			for(int i = 0; i < listCount; i++)
 			{
-				long id = Convert.ToInt64(list[i]);
-				WeakReference reference = (WeakReference)instances[id];
+                if (i > instances.Count - 1) break;
+                WeakReference reference = (WeakReference)instances[i];
 
 				if ( (reference == null) || (!reference.IsAlive) )
 				{
-				    instances.Remove(i);
+				    instances.RemoveAt(i);
 					counter++;
 				}
 			}
 
-			return counter++;
+            counter++;
+		    return counter;
 
 
 		}
-
-
-
-//        internal long Clean()
-//        {
-//			
-//			Debug.WriteLine("Cleaning Started");
-//            long[] ids = new long[instances.Count];
-//
-//            int counter = 0;
-//
-//            ArrayList idsList = new ArrayList(instances.Keys);
-//            int listCount = idsList.Count;
-//            for (int i = 0; i < listCount; i++)
-//            {
-//               long id = Convert.ToInt64(idsList[i]);
-//               WeakReference weak = (WeakReference)instances[id];
-//               
-//               if ((weak == null) || (!weak.IsAlive))
-//               {
-//                  ids[counter] = id;
-//                  counter++;
-//               }
-//            }
-//
-//
-//           // remove all instance that are not live any more.
-//           int removedItems = 0;
-//
-//           lock(this)
-//           {
-//              for(int j = 0; j < ids.Length; j++)
-//              {
-//                 if (ids[j] <= 0)break;
-//                 
-//                 instances.Remove(ids[j]);
-//                 removedItems++; 
-//              }
-//
-//			   if (instances.Count == 0)
-//			   {
-//				   staticReference = null;
-//			   }
-//           }
-//            return removedItems;
-//         }
-
 
 
         ///<summary>
@@ -509,7 +454,7 @@ namespace Silvtek.ORMEngine.Caching
         ///</returns>
         public override string ToString()
         {
-          return identifier;
+           return identifier;
         }
 
         ///<summary>

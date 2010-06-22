@@ -4,93 +4,87 @@
 #endregion
 
 using System;
-using System.Reflection;
-using System.Diagnostics;
-using System.Text;
 
 namespace Silvtek.ORMEngine.Data
 {
-    public abstract class ConnectionSettings
+    /// <summary>
+    /// Connection settings.
+    /// </summary>
+    public class ConnectionSettings 
     {
-        public abstract string ConnectionString
+        private  string connectionName;
+        private string connectionString;
+        private  bool isDefault;
+        private  int timeout;
+        private  bool preparedStatements;
+        private int commandTimeout;
+        private ConnectionProvider connectionProvider;
+        private DbTypeFormatter dbTypeFormatter;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConnectionSettings"/> class.
+        /// </summary>
+        public ConnectionSettings()
         {
-            get;
+            connectionName = String.Empty;
+            connectionString = String.Empty;
+            connectionProvider = null;
+            dbTypeFormatter = null;
+            isDefault = false;
+            timeout = 45000;
+            preparedStatements = false;
+            commandTimeout = 90;
+
         }
 
-        public abstract string ConnectionName
+        public  string ConnectionName
         {
-            get;
+            get { return connectionName; }
+            set { connectionName = value; }
         }
 
-        public abstract int Timeout
+
+
+        public ConnectionProvider ConnectionProvider
         {
-            get;
+            get { return connectionProvider; }
+            set { connectionProvider = value; }
         }
 
-        public abstract string ConnectionProviderAssembly
+        public string ConnectionString
         {
-            get;
+            get { return connectionString; }
+            set { connectionString = value; }
         }
 
-        public abstract string ConnectionProviderClass
+        public DbTypeFormatter DbTypeFormatter
         {
-            get;
+            get { return dbTypeFormatter; }
+            set { dbTypeFormatter = value; }
         }
 
-        public abstract string FormatterProviderAssembly
+        public bool IsDefault
         {
-            get;
+            get { return isDefault; }
+            set { isDefault = value; }
         }
 
-        public abstract string FormatterProviderClass
+        public int Timeout
         {
-            get;
+            get { return timeout; }
+            set { timeout = value; }
         }
 
-        public abstract bool IsDefault
+        public bool PreparedStatements
         {
-            get;
+            get { return preparedStatements; }
+            set { preparedStatements = value; }
         }
 
-        public ConnectionProvider GetConnectionProvider()
+        public int CommandTimeout
         {
-
-            ConnectionProvider provider = null;
-            try
-            {
-                // Initializing Provider
-                Assembly tmpProviderAssembly = Assembly.Load(ConnectionProviderAssembly);
-                Type providerTypeClass = tmpProviderAssembly.GetType(ConnectionProviderClass);
-                provider = (ConnectionProvider)Activator.CreateInstance(providerTypeClass);
-            }
-            catch (TypeInitializationException e)
-            {
-                string exMsg = Utility.GetResourceString("ConnectionInfo:ProviderInitializationException", ConnectionProviderClass, ConnectionProviderAssembly);
-                throw new ProviderInitializationException(exMsg, ConnectionProviderClass, e);
-            }
-
-            return provider;
-        
+            get { return commandTimeout; }
+            set { commandTimeout = value; }
         }
-
-        public DbTypeFormatter GetDbTypeFormatter()
-        {
-
-            DbTypeFormatter dbtype = null;
-            try
-            {
-                Assembly tmpTypeAssembly = Assembly.Load(FormatterProviderAssembly);
-                Type dbTypeType = tmpTypeAssembly.GetType(FormatterProviderClass);
-                dbtype = (DbTypeFormatter)Activator.CreateInstance(dbTypeType);
-            }
-            catch (TypeInitializationException e)
-            {
-                string exMsg = Utility.GetResourceString("ConnectionInfo:DbTypeInitializationException", FormatterProviderClass, FormatterProviderAssembly);
-                throw new DbTypeInitializationException(exMsg, FormatterProviderClass, e);
-            }
-
-            return dbtype;
-        }
-
     }
 }

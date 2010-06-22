@@ -103,10 +103,10 @@ namespace Silvtek.ORMEngine.Schema
         }
 
 		///<summary>
-		/// Returns the unique <see cref="ORMInfoPool" /> instance.
+        /// Returns the unique <see cref="ObjectSchemaContainer" /> instance.
 		///</summary>
 		///<returns>
-		/// The unique <see cref="ORMInfoPool" /> instance.
+        /// The unique <see cref="ObjectSchemaContainer" /> instance.
 		///</returns>
 		private static ObjectSchemaContainer GetInstance()
 		{

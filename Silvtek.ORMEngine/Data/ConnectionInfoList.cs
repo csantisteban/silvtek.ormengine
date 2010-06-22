@@ -69,15 +69,16 @@ namespace Silvtek.ORMEngine.Data
 			defaultConnectionName = newConnectionName;
 		}
 
-        internal void Add(string name, string connectionString, ConnectionProvider provider, DbTypeFormatter dbtype, int timeout, bool prepareStatement)
+        internal void Add(ConnectionSettings connectionsettings)
 		{
-			ConnectionInfo settings = new ConnectionInfo(name, connectionString, timeout, provider, dbtype);
-            settings.PreparedStatement = prepareStatement;
+            ConnectionInfo settings = new ConnectionInfo(connectionsettings);
 
+            
             // Write to the trace log if a connection is being overwritten.
-			Trace.WriteLineIf(Dictionary.Contains(name), Utility.GetResourceString("Trace:ConnectionManager:REGISTER_CONNECTION", name), Resources.TRACE_CATEGORY);
-			Dictionary[name] = settings;
+           // Trace.WriteLineIf(Dictionary.Contains(connectionsettings.ConnectionName), Utility.GetResourceString("Trace:ConnectionManager:REGISTER_CONNECTION", connectionsettings.ConnectionName), Resources.TRACE_CATEGORY);
+			Dictionary[connectionsettings.ConnectionName] = settings;
 		}
+
 
         private void SetDefaultConnection(string name)
         {

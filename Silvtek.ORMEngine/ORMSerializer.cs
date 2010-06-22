@@ -14,10 +14,15 @@ namespace Silvtek.ORMEngine
     public class ORMSerializer
     {
 
+        /// <summary>
+        /// Creates an xml string from an ORMObject.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns></returns>
         public static string CreateXml(ORMObject obj)
         {
             if (obj == null) return String.Empty;
-            string text = String.Empty;
+            string text; 
             using (MemoryStream stream = new MemoryStream())
             {
                 WriteXml(stream, obj);
@@ -27,6 +32,8 @@ namespace Silvtek.ORMEngine
                 {
                     text = reader.ReadToEnd();
                 }
+
+                stream.Close();
             }
 
             return text;
@@ -54,13 +61,13 @@ namespace Silvtek.ORMEngine
             writer.WriteAttributeString("schema-version", "1.0");
             string dateTime = String.Format("{0:yyyy-MM-ddThh:mm:ss.fffff}", DateTime.Now);
             writer.WriteAttributeString("datetime", dateTime);
-            writer.WriteStartElement("Comments");
-            writer.WriteString("The XML representation of this ORM object is for troubleshooting and auditing purposes only. \n"+
-                               "A ORM Object cannot be reconstructed back from this XML, \n"+
-                               "For reconstructing the object that generated this xml, the Binary element is used, which contains a base64 representation "+
-                               "of this object.");
+            //writer.WriteStartElement("Comments");
+            //writer.WriteString("The XML representation of this ORM object is for troubleshooting and auditing purposes only. \n"+
+            //                   "A ORM Object cannot be reconstructed back from this XML, \n"+
+            //                   "For reconstructing the object that generated this xml, the Binary element is used, which contains a base64 representation "+
+            //                   "of this object.");
 
-            writer.WriteEndElement();
+            //writer.WriteEndElement();
 
             writer.WriteStartElement("ORMEngine");
             writer.WriteAttributeString("assembly", Assembly.GetExecutingAssembly().GetName().FullName);
@@ -74,51 +81,60 @@ namespace Silvtek.ORMEngine
               writer.WriteAttributeString("type", obj.SourceObject.GetType().FullName);
               writer.WriteAttributeString("table", obj.ObjectInfo.Schema.TableName);
               writer.WriteEndElement();
-            writer.WriteStartElement("MapFields");
 
-            foreach (MapMember map in obj.ObjectInfo.Schema.MappedMembers)
-            {
-                writer.WriteStartElement("Field");
-                writer.WriteAttributeString("name", map.MemberName);
-                writer.WriteAttributeString("column", map.ColumnName);
-                writer.WriteAttributeString("data-type", map.Properties.DataType.ToString());
-                writer.WriteAttributeString("primary-key", map.Properties.IsPrimaryKey.ToString());
-                writer.WriteAttributeString("length", map.Properties.Length.ToString());
-                writer.WriteAttributeString("allow-nulls", map.Properties.AcceptNulls.ToString());
-                writer.WriteEndElement();
-            }
 
-             writer.WriteEndElement();
+              writer.WriteStartElement("MapFields");
+              foreach (MapMember map in obj.ObjectInfo.Schema.MappedMembers)
+              {
+                  writer.WriteStartElement("Field");
+                  writer.WriteAttributeString("name", map.MemberName);
+                  writer.WriteAttributeString("column", map.ColumnName);
+                  writer.WriteAttributeString("data-type", map.Properties.DataType.ToString());
+                  writer.WriteAttributeString("primary-key", map.Properties.IsPrimaryKey.ToString());
+                  writer.WriteAttributeString("length", map.Properties.Length.ToString());
+                  writer.WriteAttributeString("allow-nulls", map.Properties.AcceptNulls.ToString());
+                  writer.WriteEndElement();
+              }
+              writer.WriteEndElement();
 
+              
             // close mapInformation
             writer.WriteEndElement();
 
             // object state
             writer.WriteStartElement("ObjectState");
+            writer.WriteStartElement("Identifier");
+            writer.WriteString(obj.GetRecordIdentifier());
+            writer.WriteEndElement();
+            writer.WriteStartElement("Digest");
+            writer.WriteString(obj.GetDigest());
+            writer.WriteEndElement();
+
+
             obj.FieldList.WriteXml(writer);
 
-            writer.WriteStartElement("sql");
+            writer.WriteStartElement("Sql");
             writer.WriteString(obj.ObjectInfo.LastSql);
             writer.WriteEndElement();
 
-            writer.WriteStartElement("action-result");
+            writer.WriteStartElement("ActionResult");
             writer.WriteString(obj.Result.ToString());
             writer.WriteEndElement();
 
             writer.WriteEndElement();
 
-            byte[] bytes = Serialize(obj.SourceObject);
-            writer.WriteStartElement("Binary");
-            writer.WriteAttributeString("type", obj.SourceObject.GetType().FullName);
-            writer.WriteAttributeString("bytes", bytes.Length.ToString());
+          //  byte[] bytes = Serialize(obj.SourceObject);
+         //   writer.WriteStartElement("Binary");
+         //   writer.WriteAttributeString("type", obj.SourceObject.GetType().FullName);
+         //   writer.WriteAttributeString("bytes", bytes.Length.ToString());
 
 #if NET11
-            string base64 = Convert.ToBase64String(bytes, 0, bytes.Length);
+        //    string base64 = Convert.ToBase64String(bytes, 0, bytes.Length);
 #else
-            string base64 = Convert.ToBase64String(bytes, 0, bytes.Length, Base64FormattingOptions.InsertLineBreaks);
+        //    string base64 = Convert.ToBase64String(bytes, 0, bytes.Length, Base64FormattingOptions.InsertLineBreaks);
 #endif
-            writer.WriteRaw(base64);
-            writer.WriteEndElement();
+        //    writer.WriteRaw(base64);
+        //    writer.WriteEndElement();
 
             writer.WriteEndElement();
 
@@ -126,6 +142,11 @@ namespace Silvtek.ORMEngine
             writer.Flush();
         }
 
+        /// <summary>
+        /// Serializes the specified obj.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns></returns>
         private static byte[] Serialize(object obj)
         {
             if (obj == null)
@@ -133,7 +154,7 @@ namespace Silvtek.ORMEngine
                 throw new ArgumentNullException("obj", "Must be a instance of an object; The current value is null.");
             }
 
-            byte[] bytes = new byte[0];
+            byte[] bytes;
             using (MemoryStream stream = new MemoryStream())
             {
                 BinaryFormatter format = new BinaryFormatter();

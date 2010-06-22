@@ -1,6 +1,12 @@
+#region Copyright
+// Copyright (c) 2002-2014 Carlos Silva-Santisteban. All rights reserved.
+// See LICENSE in the repository root.
+#endregion
+
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Runtime.Remoting.Messaging;
 using System.Runtime.Serialization;
 using System.Reflection;
 using Silvtek.ORMEngine.Configs;
@@ -11,31 +17,39 @@ using Silvtek.ORMEngine.Data;
 namespace Silvtek.ORMEngine
 {
 
+    /// <summary>
+    /// ORM async caller delegate
+    /// </summary>
+    public delegate ORMObject ORMLoadCaller();
+
+    public delegate ORMObject ORMCreateCaller();
+    public delegate ActionResult ORMRemoveCaller();
+    public delegate ORMObject ORMSaveCaller(bool load);
+
 	/// <summary>
-	/// Represents a database mapped data record..
+	/// Represents an object mapped to a database table.
 	/// </summary>
     [Serializable]
 	public class ORMObject :  ICloneable, ISerializable
 	{
-	    private long bindtimestamp = 0l;
+        // Holds the unique identifier string for this object.
+        private string identifierstring;
+
+	    private long bindtimestamp;
 
         // tells wheather this object was loaded from the database 
         // for save.
 	    private bool loadedForSave;
 
-
         private readonly ORMObjectInfo objectInfo;
         private readonly object sourceBound;
-	    private string recordDigest;
+	    private string digest;
         private RecordVersion recordVersion; 
         private Hashtable bag;
 	    
 
         // Hold the operation result.
         private ActionResult result;
-
-        // Holds the unique identifier string for this object.
-        private string identifierstring;
 
         // Holds the hashcode string.
         private int hashcode;
@@ -134,6 +148,8 @@ namespace Silvtek.ORMEngine
         ///</summary>
         public event ActionFailedEventHandler Failed;
 
+	    public event ORMEventHandler Init;
+
         ///<summary>
         /// Fired when an Exception is encounter trying to perform
         /// an operation with the database.
@@ -148,18 +164,32 @@ namespace Silvtek.ORMEngine
         [NonSerialized]
         internal protected AfterTransactionEventHandler AfterTransaction;
 
+        /// <summary>
+        /// Gets the bag value.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
         internal object GetBagValue(string key)
         {
             if (bag == null) return null;
             return bag[key];
         }
 
+        /// <summary>
+        /// Adds the bag value.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
         internal void AddBagValue(string key, object value)
         {
             if (bag == null) bag = new Hashtable();
             bag.Add(key, value);
         }
 
+        /// <summary>
+        /// Gets the instance of <see cref="ORMObjectInfo" /> for this class.
+        /// </summary>
+        /// <value>The object info.</value>
         public ORMObjectInfo ObjectInfo
         {
             get { return objectInfo; }
@@ -191,7 +221,7 @@ namespace Silvtek.ORMEngine
         /// </summary>
 	    public long Age
 	    {
-            get { return (bindtimestamp == 0l) ? 0l : (DateTime.Now.Ticks - bindtimestamp); }
+            get { return (bindtimestamp == 0) ? 0 : (DateTime.Now.Ticks - bindtimestamp); }
 	    }
 
 		///<summary>
@@ -212,10 +242,19 @@ namespace Silvtek.ORMEngine
 		internal protected MemberFieldList FieldList
 		{
 			get { return memberFieldList; }
-			//set { memberFieldList = value; }
 		}
 
-        public object SourceObject
+#if !NET11
+//#pragma warning disable 1587
+        /// <summary>
+        /// Gets the source object.
+        /// </summary>
+        /// <value>The source object.</value>
+//#pragma warning restore 1587
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)] 
+#endif
+        internal object SourceObject
         {
             get { return (sourceBound == null ? this : sourceBound ); }
         }
@@ -239,20 +278,22 @@ namespace Silvtek.ORMEngine
         ///<summary>
         /// Constructor
         ///</summary>
-		protected ORMObject()
-		{
-            objectInfo = new ORMObjectInfo( GetType() );
-			result = ActionResult.TransactionNotPerformed;		
-			belongsTransaction = false;
+        protected ORMObject()
+        {
+            objectInfo = new ORMObjectInfo(GetType());
+            result = ActionResult.TransactionNotPerformed;
+            belongsTransaction = false;
             sourceBound = null;
-            recordDigest = String.Empty;
-			syncRoot = new Object();
+            // recordDigest = String.Empty;
+            syncRoot = new Object();
 
             memberFieldList = new MemberFieldList(objectInfo, SourceObject);
-         }
+
+            FireOnInit();
+        }
 
 
-        /// <summary>
+	    /// <summary>
         /// Private Constructor.
         /// </summary>
          /// <param name="source"></param>
@@ -263,15 +304,53 @@ namespace Silvtek.ORMEngine
 			belongsTransaction = false;
 			syncRoot = new Object();
             sourceBound = source;
-            recordDigest = String.Empty;
+         //   recordDigest = String.Empty;
 
             memberFieldList = new MemberFieldList(objectInfo, SourceObject);
+            FireOnInit();
 
 		}
 
 		#endregion
 
-		#region -- Create Method --
+
+        internal string GetCreateStatement()
+        {
+            //Fire event.
+            FireBeforeCreated();
+
+            // Do not perform any transaction if this object
+            // is already bounded to the database, meaning that
+            // has a  relation with a row in the database.
+            if (objectInfo.BindingStatus == BindingStatus.Bound)
+            {
+                FireFailed(Action.Create, Utility.Resources["FAILED_REASON_CREATE"]);
+                return String.Empty;
+            }
+
+            CheckReadOnlyState(Action.Create);
+            CheckLockedState(Action.Create);
+
+            if (ObjectInfo.MappedMembers.HasDigestRecordMember)
+            {
+                try
+                {
+                    string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 1);
+                    //recordDigest = MapUtility.GetDigest(fulldigestValue);
+                    recordVersion = new RecordVersion(GetRecordIdentifier(), 1);
+                }
+                catch (Exception e)
+                {
+                    Trace.WriteLine("Failed to set record digest. " + e.Message);
+                }
+            }
+
+            return objectInfo.GetInsertStatement(SourceObject);
+        }
+
+	    #region -- Create Method --
+
+
         ///<summary>
         /// Created a new record in the database.
         ///</summary>
@@ -297,7 +376,7 @@ namespace Silvtek.ORMEngine
                 try
                 {
                     string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject , 1);
-                    recordDigest = MapUtility.GetDigest(fulldigestValue);
+                    //recordDigest = MapUtility.GetDigest(fulldigestValue);
                     recordVersion = new RecordVersion(GetRecordIdentifier(), 1);
                 }
                 catch (Exception e)
@@ -312,21 +391,17 @@ namespace Silvtek.ORMEngine
                 RecordVersion.Create(this, recordVersion);
             }
 
-            //string sql = objectInfo.GetInsertStatement(SourceObject);
-            Connection cnn = objectInfo.Schema.GetConnection();
-
-            Command cmd = objectInfo.GetInsertCommand(cnn, SourceObject);
-            cnn.Open();
-
+            this.memberFieldList.RefreshObjectSource();
+           
             int rv;
-
+            string sqlText = String.Empty;
+            Connection cnn = objectInfo.Schema.GetConnection();
             try
             {
-                if (cnn.Settings.PreparedStatement)
-                {
-                    cmd.Prepare();
-                }
+                Command cmd = objectInfo.GetInsertCommand(cnn, SourceObject);
+                cnn.Open();
 
+                sqlText = cmd.CommandText;
                 rv = cmd.ExecuteNonQuery();
 
                 // FIX HERE -- Test if uses db identity should come from schema.
@@ -341,8 +416,8 @@ namespace Silvtek.ORMEngine
 
                 // retrow exception.
                 //string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
-                string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, cmd.CommandText);
-                throw new ORMException(exMsg, cmd.CommandText, e);
+                string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sqlText);
+                throw new ORMException(exMsg, sqlText, e);
             }
             finally
             {
@@ -354,28 +429,36 @@ namespace Silvtek.ORMEngine
 
             if (result == ActionResult.Succeed)
             {
-                if (objectInfo.MappedMembers.HasDbIdentityMember || objectInfo.MappedMembers.HasTimeStamp)
-                {
-                    FieldList.RefreshObjectSource();
-                    FieldList.CommitChanges();
-                }
-
-                objectInfo.SetBindStatus(BindingStatus.Bound);
-                if (!belongsTransaction) FireCreated();
-                Bind(false);
+               //InternalAfterOperationDelegate afterOp = new InternalAfterOperationDelegate(AfterCreateSucceed);
+               //afterOp.BeginInvoke(null, null);
+               AfterCreateSucceed();
             }
             else
             {
                 FireFailed(Action.Create, Utility.Resources["FAILED_REASON_UNABLETOSUCCESS"]);
             }
-
-            QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
-
-            NotifyOperation(Action.Create);
-            if (!belongsTransaction) FireAfterCreated();
         }
 
+        /// <summary>
+        /// Applies changes and fire events after a succesful insert. This method always
+        /// should be internal.
+        /// </summary>
+	    internal void AfterCreateSucceed()
+	    {
+	        if (objectInfo.MappedMembers.HasDbIdentityMember || objectInfo.MappedMembers.HasTimeStamp)
+	        {
+	            FieldList.RefreshObjectSource();
+	            FieldList.CommitChanges();
+	        }
 
+	        objectInfo.SetBindStatus(BindingStatus.Bound);
+	        if (!belongsTransaction) FireCreated();
+	        Bind(false);
+
+	        QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
+	        NotifyOperation(Action.Create);
+	        if (!belongsTransaction) FireAfterCreated();
+	    }
 
 	    #endregion
 
@@ -388,116 +471,111 @@ namespace Silvtek.ORMEngine
            FireBeforeLoaded();
            string sql = objectInfo.GetSelectStatement(SourceObject);
            Connection cnn = objectInfo.Schema.GetConnection();
-           cnn.Open();
 
-           Command cmd = new Command(sql, cnn);
+
 
            try
            {
+              
+               Command cmd = new Command(sql, cnn);
+               cnn.Open();
+               DataReader reader = cmd.ExecuteReader();
 
-             DataReader reader = cmd.ExecuteReader();
+               // Read recordset
+               if (reader.Read())
+               {
+                   MapMemberList memberList = objectInfo.MappedMembers;
 
-             // Read recordset
-             if (reader.Read())
-             {
-                 MapMemberList memberList = objectInfo.MappedMembers;
+                   for (int i = 0; i < memberList.Count; i++)
+                   {
+                       if (!memberList[i].Properties.IsPrimaryKey)
+                       {
 
-                 for (int i = 0; i < memberList.Count; i++)
-                 {
-                     if (!memberList[i].Properties.IsPrimaryKey)
-                     {
+                           if (memberList[i].Properties.AcceptNulls && reader.IsDBNull(i))
+                           {
+                               memberList[i].SetDataSourceValue(SourceObject, null);
+                               continue;
+                           }
 
-                         if (memberList[i].Properties.AcceptNulls && reader.IsDBNull(i))
-                         {
-                             memberList[i].SetDataSourceValue(SourceObject, null);
-                             continue;
-                         }
+                           if (memberList[i].Properties.DataType != DataType.Binary)
+                           {
+                               memberList[i].SetDataSourceValue(SourceObject, reader.GetValue(i));
 
-                         if (memberList[i].Properties.DataType != DataType.Binary)
-                         {
-                             memberList[i].SetDataSourceValue(SourceObject, reader.GetValue(i));
+                               if (memberList[i].Properties.IsRecordDigestEnabled)
+                               {
+                                   string fullDigestString = Convert.ToString(reader.GetValue(i));
+                                   int version = MapUtility.GetRecordVersion(fullDigestString);
+                                   //recordDigest = MapUtility.GetDigest(fullDigestString);
+                                   recordVersion = new RecordVersion(GetRecordIdentifier(), version);
+                               }
+                           }
+                           else
+                           {
+                               if (!reader.IsDBNull(i))
+                               {
 
-                             if (memberList[i].Properties.IsRecordDigestEnabled)
-                             {
-                                 string fullDigestString = Convert.ToString(reader.GetValue(i));
-                                 int version = MapUtility.GetRecordVersion(fullDigestString);
-                                 recordDigest = MapUtility.GetDigest(fullDigestString);
-                                 recordVersion = new RecordVersion(GetRecordIdentifier(), version);
-                             }
-                         }
-                         else
-                         {
-                             if (!reader.IsDBNull(i))
-                             {
+                                   DataStream dataStream = new DataStream(memberList[i]);
 
-                                 DataStream dataStream = new DataStream(memberList[i]);
+                                   Byte[] buffer = new byte[ORMConfigurator.BufferSize];
+                                   int startIndex = 0;
+                                   long bytesRead;
+                                   do
+                                   {
+                                       bytesRead = reader.GetBytes(i, startIndex, buffer, 0, buffer.Length);
+                                       if (bytesRead == 0) break;
+                                       dataStream.Write(buffer, 0, (int)bytesRead);
+                                       dataStream.Flush();
+                                       startIndex += buffer.Length;
+                                   } while (buffer.Length == bytesRead);
 
-                                 Byte[] buffer = new byte[ORMConfigurator.BufferSize];
-                                 int startIndex = 0;
-                                 long bytesRead;
-                                 do
-                                 {
-                                     bytesRead = reader.GetBytes(i, startIndex, buffer, 0, buffer.Length);
-                                     if (bytesRead == 0) break;
-                                     dataStream.Write(buffer, 0, (int) bytesRead);
-                                     dataStream.Flush();
-                                     startIndex += buffer.Length;
-                                 } while (buffer.Length == bytesRead);
+                                   dataStream.Position = 0;
 
+                                   memberList[i].SetDataSourceValue(SourceObject, dataStream);
+                               }
+                               else
+                               {
+                                   memberList[i].SetDataSourceValue(SourceObject, null);
 
-                                 dataStream.Position = 0;
+                               }
+                           }
+                       }
+                   }
 
-                                 memberList[i].SetDataSourceValue(SourceObject, dataStream);
+                   // commit all files
+                   foreach (MemberField field in memberFieldList)
+                   {
+                       field.Commit();
+                   }
 
-                             }
-                             else
-                             {
-                                 memberList[i].SetDataSourceValue(SourceObject, null);
+                   result = ActionResult.Succeed;
+                   objectInfo.SetBindStatus(BindingStatus.Bound);
 
-                             }
-                         }
+                  // Debug.WriteLine("Record Loaded from database. Identifier: " + GetRecordIdentifier(),
+                  //                 Resources.TRACE_CATEGORY);
+               }
+               else
+               {
+                   FireRecordNotFound();
+                   result = ActionResult.RecordNotFound;
+               }
 
-                     }
-                 }
-
-                 // commit all files
-                 foreach (MemberField field in memberFieldList)
-                 {
-                     field.Commit();
-                 }
-
-                 result = ActionResult.Succeed;
-                 objectInfo.SetBindStatus(BindingStatus.Bound);
-
-                 Debug.WriteLine("Record Loaded from database. Identifier: " + GetRecordIdentifier(),
-                                 Resources.TRACE_CATEGORY);
-             }
-             else
-             {
-                 FireRecordNotFound();
-
-                 Debug.WriteLine("Not found", GetRecordIdentifier());
-                 result = ActionResult.RecordNotFound;
-             }
-
-             reader.Close();
+               reader.Close();
 
            }
-           catch(DbDataException e)
+           catch (DbDataException e)
            {
-              //Fire Events.
-              FireFailed(Action.Load, Utility.Resources["FAILED_REASON_EXCEPTION"]);
-              FireError(Action.Load, e, sql);
-			  string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
-              throw new ORMException(exMsg);
+               //Fire Events.
+               FireFailed(Action.Load, Utility.Resources["FAILED_REASON_EXCEPTION"]);
+               FireError(Action.Load, e, sql);
+               string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
+               throw new ORMException(exMsg);
            }
            finally
            {
                cnn.Close();
-               cmd.Dispose();
            }
 
-           // Notify Load Operation.
+            // Notify Load Operation.
            NotifyOperation(Action.Load);
 
            // Fire Bind Event.
@@ -511,25 +589,175 @@ namespace Silvtek.ORMEngine
         internal void SetRecordDigest(string fullDigestString)
         {
             int version = MapUtility.GetRecordVersion(fullDigestString);
-            recordDigest = MapUtility.GetDigest(fullDigestString);
+            //recordDigest = MapUtility.GetDigest(fullDigestString);
             recordVersion = new RecordVersion(GetRecordIdentifier(), version);
         }
 
-	    ///<summary>
+        
+        #region -- Async actions -- 
+        
+        #region -- Async Save methods and helper methods -- 
+
+        private ORMObject InternalAsyncSave(bool load)
+        {
+            Save(load);
+            return this;
+        }
+
+        /// <summary>
+        /// Saves this object to the database asynchrously. 
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public IAsyncResult BeginSave(AsyncCallback callback, object state)
+        {
+            ORMSaveCaller ormActionDelegate = new ORMSaveCaller(InternalAsyncSave);
+            return ormActionDelegate.BeginInvoke(false, callback, state);
+        }
+
+        public ORMObject EndSave(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMSaveCaller ormActionDelegate = (ORMSaveCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result); 
+        }
+   
+
+        /// <summary>
+        /// Saves this object to the database asynchrously. 
+        /// </summary>
+        /// <param name="load">Flags whether this object should be reloaded from the database.</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public IAsyncResult BeginSave(bool load, AsyncCallback callback, object state)
+        {
+            ORMSaveCaller ormActionDelegate = new ORMSaveCaller(InternalAsyncSave);
+            return ormActionDelegate.BeginInvoke(load, callback, state);
+        }
+
+        #endregion
+
+        #region -- Async Create methods and helper methods --
+        /// <summary>
+        /// Creates a new record of this object in the database (insert)
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public IAsyncResult BeginCreate(AsyncCallback callback, object state)
+        {
+            ORMCreateCaller ormActionDelegate = new ORMCreateCaller(InternalAsyncCreate);
+            return ormActionDelegate.BeginInvoke(callback, state);        
+        }
+
+        public ORMObject EndCreate(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMCreateCaller ormActionDelegate = (ORMCreateCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+        private ORMObject InternalAsyncCreate()
+        {
+            Create();
+            return this;
+        }
+
+        #endregion
+
+        #region -- Async Load Methods --
+        /// <summary>
+        /// Saves this object to the database asynchrously. 
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public IAsyncResult BeginLoad(AsyncCallback callback, object state)
+        {
+            ORMLoadCaller ormActionDelegate = new ORMLoadCaller(InternalAsyncLoad);
+            return ormActionDelegate.BeginInvoke(callback, state);            
+        }
+
+        public ORMObject EndLoad(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMLoadCaller ormActionDelegate = (ORMLoadCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+        private ORMObject InternalAsyncLoad()
+        {
+            Load();
+            return this;
+        }
+
+        #endregion 
+
+        #region -- ASync Remove methods --
+        /// <summary>
+        /// Deletes this object from the database asynchrously.
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public IAsyncResult BeginRemove(AsyncCallback callback, object state)
+        {
+            ORMRemoveCaller ormActionDelegate = new ORMRemoveCaller(InternalAsyncRemove);
+            return ormActionDelegate.BeginInvoke(callback, state);          
+        }
+
+        public ActionResult EndRemove(IAsyncResult result)
+        {
+            if (result == null) return ActionResult.Undefined;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMRemoveCaller ormActionDelegate = (ORMRemoveCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+        private ActionResult InternalAsyncRemove()
+        {
+            Remove();
+            return this.Result;
+        }
+
+        #endregion
+
+        #region -- Async Refresh methods --
+        /// <summary>
+        /// Refreshes the async.
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public IAsyncResult BeginRefresh(AsyncCallback callback, object state)
+        {
+            ORMLoadCaller ormActionDelegate = new ORMLoadCaller(InternalAsyncRefresh);
+            return ormActionDelegate.BeginInvoke(callback, state);
+        }
+
+        public ORMObject EndRefresh(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMLoadCaller ormActionDelegate = (ORMLoadCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+        private ORMObject InternalAsyncRefresh()
+        {
+            Refresh();
+            return this;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region -- Load --
+        ///<summary>
         /// Load current instance from the datasource.
         ///</summary>
         public virtual void Load()
 	    {
-	        // Do not perform any transaction if this object
-	        // is already bounded to the database, meaning that
-	        // is a relation with a row in the database.
-	        if (objectInfo.BindingStatus == BindingStatus.Bound)
-	        {
-	            FireFailed(Action.Load, Utility.Resources["FAILED_REASON_LOAD"]);
-	            return;
-
-	        }
-
 	        if (objectInfo.IsLocked)
 	        {
 	            LockORMException e = new LockORMException(Utility.Resources["RES_LoadLocked"]);
@@ -539,7 +767,6 @@ namespace Silvtek.ORMEngine
 	        }
 
 	        // Try to get value from a shallow object with same key(if exists)
-
             if (objectInfo.Schema.IsCacheDisabled || !ORMConfigurator.GlobalCacheEnabled)
 	        {
 	            Refresh();
@@ -548,7 +775,7 @@ namespace Silvtek.ORMEngine
 
 
 	        object doSource = GlobalReferencesManager.Current.GetDataObjectFrom(GetRecordIdentifier());
-	        Debug.WriteLineIf(doSource == null, "System did not find existing reference in the cache. " + GetRecordIdentifier());
+	        //Debug.WriteLineIf(doSource == null, "System did not find existing reference in the cache. " + GetRecordIdentifier());
 
 	        if (doSource == null)
 	        {
@@ -559,7 +786,7 @@ namespace Silvtek.ORMEngine
 	            return;
 	        }
 
-	        Debug.WriteLine(String.Format(Utility.Resources["TRACE:LOADED_FROM_REFERENCE"], GetRecordIdentifier()), Resources.TRACE_CATEGORY);
+	       // Debug.WriteLine(String.Format(Utility.Resources["TRACE:LOADED_FROM_REFERENCE"], GetRecordIdentifier()), Resources.TRACE_CATEGORY);
 
 	        // Fires before load event.
 	        FireBeforeLoaded();
@@ -592,12 +819,11 @@ namespace Silvtek.ORMEngine
 	        // Fire After Load Event.
 	        Bind(true);
 	        FireAfterLoaded();
+        }
 
+        #endregion
 
-	    }
-
-
-	    #region -- Remove Methods --
+        #region -- Remove Methods --
         ///<summary>
         /// Remove the current instance from the datasource.
         ///</summary>
@@ -618,6 +844,25 @@ namespace Silvtek.ORMEngine
            
         }
 
+        /// <summary>
+        /// Gets the delete statement.
+        /// </summary>
+        /// <returns></returns>
+        internal string GetRemoveStatement()
+        {
+            //Fire event
+            FireBeforeRemoved();
+
+            // Check if primary keys has not being changed.
+            if (objectInfo.BindingStatus == BindingStatus.Bound) ValidatePrimaryKeysModifications();
+
+            this.CheckReadOnlyState(Action.Remove);
+            this.CheckLockedState(Action.Remove);
+
+            return objectInfo.GetDeleteStatement(SourceObject);
+        }
+
+
         ///<summary>
         /// Removes record from datasource.
         ///</summary>
@@ -628,36 +873,20 @@ namespace Silvtek.ORMEngine
 
            // Check if primary keys has not being changed.
            if (objectInfo.BindingStatus == BindingStatus.Bound)ValidatePrimaryKeysModifications();
-
-           if (objectInfo.IsReadOnly)
-           {
-
-             ReadOnlyException e = new ReadOnlyException(Utility.Resources["RES_RemoveReadOnly"]);
-             FireFailed(Action.Remove, Utility.Resources["FAILED_REASON_READONLY"]);
-             FireError(Action.Remove, e, String.Empty);
-             throw e;
-           }
-           
-            if (objectInfo.IsLocked)
-            {
-
-                LockORMException e = new LockORMException(Utility.Resources["RES_RemoveLocked"]);
-                FireFailed(Action.Remove, Utility.Resources["FAILED_REASON_LOCKED"]);
-                FireError(Action.Remove, e, String.Empty);
-                throw e;
-            }
-
+         
+            this.CheckReadOnlyState(Action.Remove);
+            this.CheckLockedState(Action.Remove);
 
             string sql = objectInfo.GetDeleteStatement(SourceObject);
             Connection cnn = objectInfo.Schema.GetConnection();
-            cnn.Open();
-
-            Command cmd = new Command(sql, cnn);
-
+ 
             int rv;
 
             try
             {
+                ;
+                Command cmd = new Command(sql, cnn);
+                cnn.Open();
                 rv = cmd.ExecuteNonQuery();
             }
             catch (DbDataException e)
@@ -678,31 +907,49 @@ namespace Silvtek.ORMEngine
             {
                 // if the removal of the record was sucessfull, then update the identifier string,
                 // if hasn't have any value for brocasting the removal.
-                if (identifierstring == null || identifierstring.Length == 0)
-                {
-                    identifierstring = GetRecordIdentifier();
-                }
-
-                objectInfo.SetBindStatus(BindingStatus.Removed);
-                GlobalReferencesManager.Current.BroadcastRemoval(this);
-                if (!belongsTransaction) FireRemoved();
+              //InternalAfterOperationDelegate afterOp = new InternalAfterOperationDelegate(AfterRemoveSucceed);
+             //  afterOp.BeginInvoke(null, null);
+               AfterRemoveSucceed();
             }
             else
             {
                 FireFailed(Action.Remove, Utility.Resources["FAILED_REASON_UNABLETOSUCCESS"]);
             }
 
-            recordDigest = String.Empty;
-            QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
-            NotifyOperation(Action.Remove);
-            if (!belongsTransaction)FireAfterRemoved();
         }
 
-		#endregion
+	    internal void AfterRemoveSucceed()
+	    {
+	        if (identifierstring == null || identifierstring.Length == 0)
+	        {
+	            identifierstring = GetRecordIdentifier();
+	        }
+
+	        objectInfo.SetBindStatus(BindingStatus.Removed);
+	        GlobalReferencesManager.Current.BroadcastRemoval(this);
+
+	        if (!belongsTransaction) FireRemoved();
+                
+	        //recordDigest = String.Empty;
+	        QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
+	        NotifyOperation(Action.Remove);
+	        if (!belongsTransaction) FireAfterRemoved();
+	    }
+
+	    #endregion
 
 		#region -- Store Methods --
 
-		/// <summary>
+        internal void InternalLoadForSave()
+        {
+            LoadForSave();
+            if (Result == ActionResult.Succeed)
+            {
+                loadedForSave = false;
+            }
+        }
+
+	    /// <summary>
 		/// Saves changes to the database. 
 		/// </summary>
 		/// <param name="load">Whether to load before saving.</param>
@@ -711,105 +958,19 @@ namespace Silvtek.ORMEngine
 
             if (load)
             {
-                Hashtable currentValuesList = new Hashtable(objectInfo.Schema.MappedMembers.Count);
-                Hashtable preserveValues = new Hashtable();
-
-                foreach (MapMember currentMapMember in objectInfo.MappedMembers) 
-                {
-                    currentValuesList.Add(currentMapMember.MemberName, currentMapMember.GetMemberValue(SourceObject));
-                }
-
-                MemberInfo[] memberInfos = SourceObject.GetType().GetMembers(BindingFlags.NonPublic | BindingFlags.Instance |
-                                                                             BindingFlags.Public | BindingFlags.DeclaredOnly);
-
-                foreach (MemberInfo memberInfo in memberInfos)
-                {
-                    if (memberInfo.MemberType != MemberTypes.Field && memberInfo.MemberType != MemberTypes.Property)
-                    {
-                        continue;
-                    }
-
-                    PreserveAttribute[] presserveAttributes = (PreserveAttribute[]) memberInfo.GetCustomAttributes(typeof (PreserveAttribute), true);
-                    
-                    if (presserveAttributes.Length == 0) continue;
-
-                    object value = null;
-                    
-                    if (memberInfo.MemberType == MemberTypes.Property)
-                    {
-                        PropertyInfo propertyInfo = (PropertyInfo) memberInfo;
-                        if (!propertyInfo.CanRead || !propertyInfo.CanWrite)
-                        {
-                            throw new ORMException("Preserve Attribute can only be placed in a field or property with set and get accesors");
-                        }
-
-                        value = propertyInfo.GetValue(SourceObject, null);
-                    }
-                    
-                    if (memberInfo.MemberType == MemberTypes.Field)
-                    {
-                        FieldInfo fieldInfo = (FieldInfo) memberInfo;
-                        value = fieldInfo.GetValue(SourceObject);
-                    }
-
-                    if (value == null && presserveAttributes[0].PreserveNull)
-                    {
-                        preserveValues.Add(memberInfo, value);
-                    }
-                    else if (value != null)
-                    {
-                        preserveValues.Add(memberInfo, value);
-                    }
-                }
-             
-                // load object from database, so we can check existances and changes.
-                Load();
-
+                LoadForSave();
                 if (Result == ActionResult.Succeed)
                 {
-                    loadedForSave = true;
-                    foreach (MapMember currentMapMember in objectInfo.MappedMembers) 
-                    {
-                        if (currentMapMember.Properties.IsRecordDigestEnabled) continue;
-                        object value = currentValuesList[currentMapMember.MemberName];
-
-                        if (MapUtility.CanUpdateMember(currentMapMember, value) && !Equals(currentMapMember.Properties.DefaultValue, value))
-                        {
-                            currentMapMember.SetMemberValue(SourceObject, value);
-                        }              
-
-                    }
-
-                    foreach (MemberInfo memberInfo in preserveValues.Keys)
-                    {
-                        object oldValue = preserveValues[memberInfo];
-                        if (memberInfo.MemberType == MemberTypes.Property)
-                        {
-                            PropertyInfo propertyInfo = (PropertyInfo)memberInfo;
-                            propertyInfo.SetValue(SourceObject, oldValue, null);
-                        }
-
-                        if (memberInfo.MemberType == MemberTypes.Field)
-                        {
-                            FieldInfo fieldInfo = (FieldInfo)memberInfo;
-                            fieldInfo.SetValue(SourceObject, oldValue);
-                        }
-                    }
-
-                    memberFieldList.RefreshObjectSource();
-
-                    objectInfo.RemoveDirtyStatus(); 
-                  
-                    Save();
+                    InternalSave();
                     loadedForSave = false;
                 }
 
+                
             }
             else if (objectInfo.BindingStatus == BindingStatus.Bound)
             {
-                Save();
+                InternalSave();
             }
-
 
             // Do not perform any operation if this object is not bounded to
             // the database.
@@ -826,17 +987,188 @@ namespace Silvtek.ORMEngine
             }
             else
             {
-                string exMsg = String.Format("Unrecognized Binding Status: "+objectInfo.BindingStatus);
+                string exMsg = String.Format("Unrecognized Binding Status: " + objectInfo.BindingStatus);
                 throw new ORMException(exMsg);
             }
-
-			
 		}
+
+        // Reload again the object from data source and saves it with changes.
+	    private void LoadForSave()
+	    {
+            // do not double load if its already bound to data.
+            if (this.ObjectInfo.BindingStatus == BindingStatus.Bound)
+            {
+                return;
+            }
+
+	        Hashtable currentValuesList = new Hashtable(objectInfo.Schema.MappedMembers.Count);
+	        Hashtable preserveValues = new Hashtable();
+
+	        foreach (MapMember currentMapMember in objectInfo.MappedMembers) 
+	        {
+	            currentValuesList.Add(currentMapMember.MemberName, currentMapMember.GetMemberValue(SourceObject));
+	        }
+
+	        MemberInfo[] memberInfos = SourceObject.GetType().GetMembers(BindingFlags.NonPublic | BindingFlags.Instance |
+	                                                                     BindingFlags.Public | BindingFlags.DeclaredOnly);
+
+	        foreach (MemberInfo memberInfo in memberInfos)
+	        {
+	            if (memberInfo.MemberType != MemberTypes.Field && memberInfo.MemberType != MemberTypes.Property)
+	            {
+	                continue;
+	            }
+
+	            PreserveAttribute[] presserveAttributes = (PreserveAttribute[]) memberInfo.GetCustomAttributes(typeof (PreserveAttribute), true);
+                    
+	            if (presserveAttributes.Length == 0) continue;
+
+	            object value = null;
+                    
+	            if (memberInfo.MemberType == MemberTypes.Property)
+	            {
+	                PropertyInfo propertyInfo = (PropertyInfo) memberInfo;
+	                if (!propertyInfo.CanRead || !propertyInfo.CanWrite)
+	                {
+	                    throw new ORMException("Preserve Attribute can only be placed in a field or property with set and get accesors");
+	                }
+
+	                value = propertyInfo.GetValue(SourceObject, null);
+	            }
+                    
+	            if (memberInfo.MemberType == MemberTypes.Field)
+	            {
+	                FieldInfo fieldInfo = (FieldInfo) memberInfo;
+	                value = fieldInfo.GetValue(SourceObject);
+	            }
+
+	            if (value == null && presserveAttributes[0].PreserveNull)
+	            {
+	                preserveValues.Add(memberInfo, value);
+	            }
+	            else if (value != null)
+	            {
+	                preserveValues.Add(memberInfo, value);
+	            }
+	        }
+             
+	        // load object from database, so we can check existances and changes.
+	        Load();
+
+	        if (Result == ActionResult.Succeed)
+	        {
+	            loadedForSave = true;
+	            foreach (MapMember currentMapMember in objectInfo.MappedMembers) 
+	            {
+	                if (currentMapMember.Properties.IsRecordDigestEnabled) continue;
+	                object value = currentValuesList[currentMapMember.MemberName];
+
+	                if (MapUtility.CanUpdateMember(currentMapMember, value) && !Equals(currentMapMember.Properties.DefaultValue, value))
+	                {
+	                    currentMapMember.SetMemberValue(SourceObject, value);
+	                }              
+
+	            }
+
+	            foreach (MemberInfo memberInfo in preserveValues.Keys)
+	            {
+	                object oldValue = preserveValues[memberInfo];
+	                if (memberInfo.MemberType == MemberTypes.Property)
+	                {
+	                    PropertyInfo propertyInfo = (PropertyInfo)memberInfo;
+	                    propertyInfo.SetValue(SourceObject, oldValue, null);
+	                }
+
+	                if (memberInfo.MemberType == MemberTypes.Field)
+	                {
+	                    FieldInfo fieldInfo = (FieldInfo)memberInfo;
+	                    fieldInfo.SetValue(SourceObject, oldValue);
+	                }
+	            }
+
+	            memberFieldList.RefreshObjectSource();
+
+	            objectInfo.RemoveDirtyStatus(); 
+                  
+	        }
+	    }
+
+        /// <summary>
+        /// Gets the save statement to be used in a batch.
+        /// </summary>
+        /// <returns></returns>
+	    internal string GetSaveStatement()
+        {
+            bool load = (ObjectInfo.BindingStatus != BindingStatus.Bound);
+
+            if (!load)
+            {
+                LoadForSave();
+            }
+
+            // TODO: Check if we can use the digest for a quick comparasion of modified fields.
+            if (ObjectInfo.MappedMembers.HasDigestRecordMember)
+            {
+                DigestComparisonResult comparisonResult = MapUtility.CompareRecordDigest(ObjectInfo.MappedMembers, SourceObject);
+                if (comparisonResult == DigestComparisonResult.Equal)
+                {
+                    result = ActionResult.NotModified;
+                    return String.Empty;
+                }
+                if (comparisonResult == DigestComparisonResult.EmptyDigest)
+                {
+                    string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 2);
+                    //recordDigest = MapUtility.GetDigest(fulldigestValue);
+                    recordVersion = new RecordVersion(GetRecordIdentifier(), 2);
+                }
+                else
+                {
+                    CheckRecordVersion();
+                }
+            }
+            else
+            {
+                CheckRecordVersion();
+            }
+
+            FireBeforeSaved();
+
+            CheckDirtyObject(Action.Save);
+
+            // Do not perform any operation if this object is not bounded to
+            // the database.
+            if (objectInfo.BindingStatus == BindingStatus.Unbind)
+            {
+                FireFailed(Action.Save, Utility.Resources["FAILED_REASON_UNBOUNDED"]);
+                result = ActionResult.Failed;
+                return String.Empty;
+            }
+
+            CheckReadOnlyState(Action.Save);
+            CheckLockedState(Action.Save);
+
+            // Check that primary keys has not been changed.
+            ValidatePrimaryKeysModifications();
+
+            if (!memberFieldList.HasChanges)
+            {
+                result = ActionResult.NotModified;
+                return String.Empty;
+            }
+
+            return objectInfo.GetUpdateStatement(this.FieldList, SourceObject); 
+        }
 
         ///<summary>
         /// Saves changes to the database.
         ///</summary>
         public virtual void Save()
+        {
+            InternalSave();
+        }
+
+
+        private  void InternalSave()
         {
                 
             // TODO: Check if we can use the digest for a quick comparasion of modified fields.
@@ -851,7 +1183,7 @@ namespace Silvtek.ORMEngine
                 if (comparisonResult == DigestComparisonResult.EmptyDigest)
                 {
                     string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 2);
-                    recordDigest = MapUtility.GetDigest(fulldigestValue);
+                    //recordDigest = MapUtility.GetDigest(fulldigestValue);
                     recordVersion = new RecordVersion(GetRecordIdentifier(), 2);
                 }
                 else
@@ -868,7 +1200,6 @@ namespace Silvtek.ORMEngine
 
 			CheckDirtyObject(Action.Save);
 
-
            // Do not perform any operation if this object is not bounded to
            // the database.
            if (objectInfo.BindingStatus == BindingStatus.Unbind)
@@ -881,83 +1212,119 @@ namespace Silvtek.ORMEngine
             CheckReadOnlyState(Action.Save);
             CheckLockedState(Action.Save);
 
+            int rv = 0;
+            // Check that primary keys has not been changed.
+            ValidatePrimaryKeysModifications();
+            memberFieldList.RefreshObjectSource();
+            if (!memberFieldList.HasChanges)
+            {
+                result = ActionResult.NotModified;
+                return;
+            }
+
+            Connection cnn = objectInfo.Schema.GetConnection();
+
             lock(SyncRoot)
             {
-					
-                // Check that primary keys has not been changed.
-                ValidatePrimaryKeysModifications();
-
-                if (!memberFieldList.HasChanges)
-                {
-                    result = ActionResult.NotModified;
-                    return;
-                }
-
-                Connection cnn = objectInfo.Schema.GetConnection();
-                Command cmd = objectInfo.GetUpdateCommand(cnn, memberFieldList, SourceObject);
-
-                if (cmd == null)
-                {
-                    result = ActionResult.NotModified;
-                    return;
-                }
-
-                cnn.Open();
-                int rv;
+                string sqltext = String.Empty;
                 try
                 {
-                    if (cnn.Settings.PreparedStatement)
+
+                    Command cmd = objectInfo.GetUpdateCommand(cnn, memberFieldList, SourceObject);
+                    if (cmd == null)
                     {
-                        cmd.Prepare();
+                        result = ActionResult.NotModified;
+                        return;
                     }
 
+                    cnn.Open();
+
+                    sqltext = cmd.CommandText;
                     rv = cmd.ExecuteNonQuery();
+                    //rv = 0;
+                    //using (IDataReader reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+                    //{
+                    //    if (reader != null)
+                    //    {
+                    //        reader.Close();
+                    //        rv = reader.RecordsAffected;
+                    //    }
+                        
+                    //}
+        
+
+
                 }
-                catch(DbDataException e)
+                catch (DbDataException e)
                 {
                     FireFailed(Action.Save, Utility.Resources["FAILED_REASON_EXCEPTION"]);
-                    FireError(Action.Save, e, cmd.CommandText);
-                    string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, cmd.CommandText);
-                    throw new ORMException(exMsg, cmd.CommandText, e);
+                    FireError(Action.Save, e, sqltext);
+                    string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sqltext);
+                    throw new ORMException(exMsg, sqltext, e);
 
                 }
                 finally
                 {
                     cnn.Close();
                 }
-
-                result = (rv == 1) ? ActionResult.Succeed : ActionResult.Failed;
-
-                if (result == ActionResult.Succeed)
-                {
-                    if (objectInfo.MappedMembers.HasTimeStamp)
-                    {
-                        FieldList.RefreshObjectSource();
-                    } 
-
-                    FieldList.CommitChanges();
-                    ORMReferencesManager manager = GlobalReferencesManager.Current.GetManagerInstance(GetRecordIdentifier());
-                    manager.BroadcastUpdate(this);
-                    if(!belongsTransaction)FireChanged();
-                }
-                else
-                {
-                    FireFailed(Action.Save, Utility.Resources["FAILED_REASON_UNABLETOSUCCESS"]);
-                }
-
             }
 
-            QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
-            NotifyOperation(Action.Save);
-            if (!belongsTransaction)FireAfterSaved();
+            result = (rv == 1) ? ActionResult.Succeed : ActionResult.Failed;
+
+            if (result == ActionResult.Succeed)
+            {
+               //InternalAfterOperationDelegate afterSaveSucceed = new InternalAfterOperationDelegate(AfterSaveSucceed);
+               // afterSaveSucceed.BeginInvoke(null, null);
+                AfterSaveSucceed();
+            }
+            else
+            {
+                FireFailed(Action.Save, Utility.Resources["FAILED_REASON_UNABLETOSUCCESS"]);
+            }
+
         }
 
+	    internal void AfterSaveSucceed()
+	    {
+	        if (objectInfo.MappedMembers.HasTimeStamp)
+	        {
+	            FieldList.RefreshObjectSource();
+	        }
 
+	        FieldList.CommitChanges();
+	        ORMReferencesManager manager = GlobalReferencesManager.Current.GetManagerInstance(GetRecordIdentifier());
+	        if (manager != null) manager.BroadcastUpdate(this);
 
+	        if (!belongsTransaction) FireChanged();
 
+	        QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
+	        NotifyOperation(Action.Save);
+	        if (!belongsTransaction) FireAfterSaved();
+	    }
 
 	    #endregion
 
+        public string GetDigest()
+        {
+            if (this.digest == null || this.digest.Length == 0)
+            {
+                digest = MapUtility.GenerateStandardRecordDigest(this.ObjectInfo.MappedMembers, this.SourceObject);
+            }
+            else if (FieldList.HasChanges)
+            {
+                digest = MapUtility.GenerateStandardRecordDigest(this.ObjectInfo.MappedMembers, this.SourceObject);
+            }
+            else
+            {
+                FieldList.RefreshObjectSource();
+                if (FieldList.HasChanges)
+                {
+                    digest = MapUtility.GenerateStandardRecordDigest(this.ObjectInfo.MappedMembers, this.SourceObject);
+                }
+            }
+
+            return digest;
+        }
 
        #region Overrided Object methods
 
@@ -1036,7 +1403,7 @@ namespace Silvtek.ORMEngine
 	   /// Clone this object.
 	   /// </summary>
 	   /// <returns>A new object identically to this instance.</returns>
-       public object Clone()
+       public virtual object Clone()
        {
 
           object cloneSourceObject = Activator.CreateInstance(SourceObject.GetType(), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
@@ -1051,10 +1418,7 @@ namespace Silvtek.ORMEngine
 
 		internal void CopyFieldsFrom(ORMObject obj)
 		{
-            //memberFieldList = (MemberFieldList)obj.memberFieldList.Clone();
-
-
-            if (objectInfo.Schema.Type == SourceObject.GetType())
+           if (objectInfo.Schema.Type == SourceObject.GetType())
             {
                 for (int i = 0; i < objectInfo.MappedMembers.Count; i++)
                 {
@@ -1067,10 +1431,6 @@ namespace Silvtek.ORMEngine
                 }
 
                 memberFieldList = new MemberFieldList(objectInfo, SourceObject);
-                //foreach (MemberField field in memberFieldList)
-                //{
-                //    field.Commit();
-                //}
             }
           
 		}
@@ -1089,7 +1449,7 @@ namespace Silvtek.ORMEngine
        ///</remarks>
         internal string GetRecordIdentifier()
        {
-           Trace.Assert(objectInfo != null, "Assertion failed");
+           //Trace.Assert(objectInfo != null, "Assertion failed");
 
            if (objectInfo.BindingStatus == BindingStatus.Unbind)
            {
@@ -1097,8 +1457,7 @@ namespace Silvtek.ORMEngine
            }
 
 
-           if (objectInfo.BindingStatus == BindingStatus.Bound &&
-               (identifierstring == null || identifierstring.Length == 0))
+           if (objectInfo.BindingStatus == BindingStatus.Bound && (identifierstring == null || identifierstring.Length == 0))
            {
                identifierstring = objectInfo.CreateIdentifierString(SourceObject);
            }
@@ -1171,7 +1530,7 @@ namespace Silvtek.ORMEngine
 	   
        private void ValidatePrimaryKeysModifications()
        {
-         Trace.Assert(memberFieldList != null);
+         //Trace.Assert(memberFieldList != null);
 
 
          for (int i = 0; i < objectInfo.MappedMembers.Count; i++)
@@ -1221,8 +1580,8 @@ namespace Silvtek.ORMEngine
         ///</param>
         private void Bind(bool isFromRef)
         {
-            Trace.Assert((objectInfo.BindingStatus == BindingStatus.Bound),
-                         Utility.GetResourceString("TRACE:BIDDING_AUBOUND_OBJECT", GetRecordIdentifier()));
+            //Trace.Assert((objectInfo.BindingStatus == BindingStatus.Bound),
+                        // Utility.GetResourceString("TRACE:BIDDING_AUBOUND_OBJECT", GetRecordIdentifier()));
 
 
             if (!isFromRef)
@@ -1238,8 +1597,18 @@ namespace Silvtek.ORMEngine
 
             bindtimestamp = DateTime.Now.Ticks;
             FireDataBinding();
-            if (!objectInfo.IsIsolated) GlobalReferencesManager.Current.Add(this);
 
+            if (!objectInfo.IsIsolated)
+            {
+                try
+                {
+                    GlobalReferencesManager.Current.Add(this);
+                }
+                catch(Exception ex)
+                {
+                    Trace.WriteLine(ex.Message);
+                }
+            }
         }
 
 	    private void NotifyOperation(Action op)
@@ -1287,7 +1656,7 @@ namespace Silvtek.ORMEngine
             memberFieldList = (MemberFieldList)si.GetValue("DataObjectFields", typeof(MemberFieldList));
             objectInfo = (ORMObjectInfo)si.GetValue("ObjectInfo", typeof(ORMObjectInfo));
             sourceBound = si.GetValue("Source", objectInfo.Schema.Type);
-            recordDigest = si.GetString("recordDigest");
+            //recordDigest = si.GetString("recordDigest");
             syncRoot = new Object();
 
 
@@ -1364,6 +1733,14 @@ namespace Silvtek.ORMEngine
         /// </summary>
         protected virtual void OnAfterLoaded()
         {
+        }
+
+        /// <summary>
+        /// Invoked after object has completed initializing.
+        /// </summary>
+        protected virtual void OnInit()
+        {
+            
         }
 
         /// <summary>
@@ -1520,6 +1897,23 @@ namespace Silvtek.ORMEngine
         }
 
         /// <summary>
+        /// Fire the BeforeStored event.
+        /// </summary>
+        protected void FireOnInit()
+        {
+            if (!objectInfo.CancelEvents)
+            {
+                OnInit();
+
+                if (Init != null)
+                {
+                    ORMEventArgs args = new ORMEventArgs(SourceObject);
+                    Init(this, args);
+                }
+            }
+        }
+
+        /// <summary>
         /// Fire the <see cref="AfterStored" /> event.
         /// </summary>
         protected void FireAfterSaved()
@@ -1651,7 +2045,7 @@ namespace Silvtek.ORMEngine
         /// <summary>
         /// Fire the <see cref="Failed" /> event.
         /// </summary>
-        protected void FireFailed(Action op, string reason)
+        internal protected void FireFailed(Action op, string reason)
         {
             ActionFailedEventArgs args = new ActionFailedEventArgs(op, reason);
             OnFailed(args);
@@ -1661,7 +2055,7 @@ namespace Silvtek.ORMEngine
         /// <summary>
         /// Fire the <see cref="Error" /> event.
         /// </summary>
-        protected void FireError(Action action, Exception e, string sql)
+        internal protected void FireError(Action action, Exception e, string sql)
         {
             ORMErrorEventArgs args = new ORMErrorEventArgs(action, e, sql);
             OnError(args);
@@ -1703,39 +2097,41 @@ namespace Silvtek.ORMEngine
         private void CheckRecordVersion()
         {
 
-            if (recordVersion == null)
-                // check if this record has been update by another app.
-                //int version = 2;
+            if (recordVersion == null) return;
 
-                if (!loadedForSave)
+            // check if this record has been update by another app.
+            //int version = 2;
+
+            if (!loadedForSave)
+            {
+                RecordVersion globalVersion = RecordVersion.GetCurrentVersion(this);
+
+                if (globalVersion != null && (recordVersion.VersionNumber < globalVersion.VersionNumber))
                 {
-                    RecordVersion globalVersion = RecordVersion.GetCurrentVersion(this);
+                    string errorMsg =
+                        String.Format(
+                            "Dirty record update. A newer record exists in the database. RecordIdentifier: {0}",
+                            GetRecordIdentifier());
 
-                    if (globalVersion != null && (recordVersion.VersionNumber < globalVersion.VersionNumber))
-                    {
-                        string errorMsg =
-                            String.Format(
-                                "Dirty record update. A newer record exists in the database. RecordIdentifier: {0}",
-                                GetRecordIdentifier());
-
-                        ORMException ex = new ORMException(errorMsg);
-                        FireFailed(Action.Save, ex.Message);
-                        FireError(Action.Save, ex, String.Empty);
-                        throw ex;
-                    }
+                    ORMException ex = new ORMException(errorMsg);
+                    FireFailed(Action.Save, ex.Message);
+                    FireError(Action.Save, ex, String.Empty);
+                    throw ex;
                 }
+            }
+
 
             try
             {
                 RecordVersion.Update(this, recordVersion);
 
                 int version = (recordVersion != null) ? recordVersion.VersionNumber : 0;
-                Debug.WriteLine("new record version for update: " + version);
+                //Debug.WriteLine("new record version for update: " + version);
 
                 if (ObjectInfo.MappedMembers.HasDigestRecordMember)
                 {
                     string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, version);
-                    recordDigest = MapUtility.GetDigest(fulldigestValue);
+                    //recordDigest = MapUtility.GetDigest(fulldigestValue);
                 }
             }
             catch (Exception e)
@@ -1744,14 +2140,14 @@ namespace Silvtek.ORMEngine
             }
         }
 
-        private void CheckDirtyObject(Action action)
+	    private void CheckDirtyObject(Action action)
         {
             if (objectInfo.IsDirty)
             {
-                string errorMsg = String.Format("A dirty object cannot save the database. " +
+                string errorMsg = String.Format("Data Object is dirty.  " +
                                                 "The database has been modified by another instance since this object " +
                                                 "has been loaded therefore the values of this object is outdated. " +
-                                                "Object: {0}", GetRecordIdentifier());
+                                                "Type: {0} Object: {1}", this.SourceObject.GetType().FullName, GetRecordIdentifier());
 
                 ORMException ex = new ORMException(errorMsg);
                 FireFailed(action, ex.Message);
@@ -1761,45 +2157,6 @@ namespace Silvtek.ORMEngine
         }
         #endregion
 
-        //#if NET20
-  //      #region IXmlSerializable Members
 
-  //      public System.Xml.Schema.XmlSchema GetSchema()
-  //      {
-  //          throw new NotSupportedException("This method is not supported!!!.");
-  //      }
-
-  //      public void ReadXml(XmlReader reader)
-  //      {
-  //          XmlSerializerUtil.ReadXml(reader, Source, ConnectionManager.Current.XmlPrefix);
-  //      }
-
-  //      internal void InternalResponseWriteXml(XmlWriter writer)
-  //      {
-  //          writer.WriteStartElement(ConnectionManager.Current.XmlPrefix, Source.GetType().Name, ConnectionManager.Current.XmlNamespace);
-            
-  //          XmlSerializerUtil.WriteXml(writer, Source, ConnectionManager.Current.XmlPrefix, ConnectionManager.Current.XmlNamespace);
-            
-  //          writer.WriteStartElement(ConnectionManager.Current.XmlPrefix, "result", ConnectionManager.Current.XmlNamespace);
-  //          writer.WriteString(result.ToString());
-  //          writer.WriteEndElement();
-
-  //          writer.WriteStartElement(ConnectionManager.Current.XmlPrefix, "isCopy", ConnectionManager.Current.XmlNamespace);
-  //          writer.WriteString(ObjectInfo.IsCopy.ToString());
-  //          writer.WriteEndElement();
-
-  //          writer.WriteEndElement();
-
-  //      }
-
-  //      public void WriteXml(XmlWriter writer)
-  //      {
-  //          writer.WriteStartElement(ConnectionManager.Current.XmlPrefix, this.Source.GetType().Name, ConnectionManager.Current.XmlNamespace);
-  //          XmlSerializerUtil.WriteXml(writer, this.Source, ConnectionManager.Current.XmlPrefix, ConnectionManager.Current.XmlNamespace);
-  //          writer.WriteEndElement();
-  //      }
-
-  //      #endregion
-//#endif
     }
 }

@@ -292,7 +292,7 @@ namespace Silvtek.ORMEngine.DataQuery
                                 ormObj.BindByForce();
                                 if (lockObjects) ORM.Lock(ormObj);
                             }
-                            else
+                            else if (lockObjects)
                             {
                                 ORM.Lock(ormObj);
                             }
@@ -318,7 +318,7 @@ namespace Silvtek.ORMEngine.DataQuery
             }
             catch (Exception e)
             {
-                Trace.WriteLine(Utility.GetResourceString("TRACE_EXECUTE_QUERY_EXCEPTION", sql, e.Message, e.StackTrace), Resources.TRACE_CATEGORY);
+               // Trace.WriteLine(Utility.GetResourceString("TRACE_EXECUTE_QUERY_EXCEPTION", sql, e.Message, e.StackTrace), Resources.TRACE_CATEGORY);
                 throw;
             }
             finally

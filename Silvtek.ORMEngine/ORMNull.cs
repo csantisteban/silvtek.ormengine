@@ -1,15 +1,27 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Xml;
 
 namespace Silvtek.ORMEngine
 {
-    
+
+    /// <summary>
+    /// 
+    /// </summary>
     public class ORMNull
     {
+        /// <summary>
+        /// Represents a pseudo null string.
+        /// </summary>
         public static readonly string STRING = "\0";
+
+
+        /// <summary>
+        /// Represents a pseudo null value for an Int32.
+        /// </summary>
         public const Int32 INT32 = -2147483647;
+
+
         public const Int64 INT64 = -9223372036854775807;
         public const Int16 INT16 = -32767;
         public static readonly DateTime DATETIME = DateTime.MinValue.AddTicks(1);

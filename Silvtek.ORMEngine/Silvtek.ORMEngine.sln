@@ -17,10 +17,4 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(Dynamsoft SCM Anywhere Hosted VSPpackage) = preSolution
-		SccAuxPath = 
-		SccNumbersOfProjects = 1
-		SccProjectUniqueName0 = Silvtek.ORMEngine.csproj
-		SccProjectName0 = Silvtek ORM Engine:$/1.7/Silvtek.ORMEngine v1.7/Silvtek.ORMEngine
-	EndGlobalSection
 EndGlobal

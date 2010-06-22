@@ -18,7 +18,7 @@ namespace Silvtek.ORMEngine.DataQuery
         /// </summary>
         public object[] Result
         {
-            get { return result; }
+            get { return result == null ? new object[0] : result ; }
         }
 
         public SingleValueQuery(Type type, string member) : base(type)
@@ -31,7 +31,7 @@ namespace Silvtek.ORMEngine.DataQuery
         {
             SingleValueQueryParser parser = new SingleValueQueryParser(this, membername);
             string sql = parser.GetSql();
-            Trace.WriteLine("sql" + sql);
+            //Trace.WriteLine("sql" + sql);
             return sql;
         }
 

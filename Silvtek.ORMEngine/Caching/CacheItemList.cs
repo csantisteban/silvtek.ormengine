@@ -14,6 +14,7 @@ namespace Silvtek.ORMEngine.Caching
 	/// </summary>
 	internal class CacheItemList : NameObjectCollectionBase
 	{
+        private static readonly object mutex = new object();
 
 		/// <summary>
 		/// Default constructor.
@@ -61,6 +62,7 @@ namespace Silvtek.ORMEngine.Caching
 			BaseAdd(item.Key, item);
 		}
 
+
         internal void CollectItems(Type type)
         {
             int removedObjects = 0;
@@ -80,7 +82,7 @@ namespace Silvtek.ORMEngine.Caching
                 }
             }
 
-            Trace.WriteLine("Query resultset for type " + type.FullName + " has been removed. Total queries: " + removedObjects);
+      //      Trace.WriteLine("Query resultset for type " + type.FullName + " has been removed. Total queries: " + removedObjects);
         }
 
 		/// <summary>
@@ -91,32 +93,43 @@ namespace Silvtek.ORMEngine.Caching
 		{
 			int removedObjects = 0;
 
-			lock(this)
+            lock (mutex)
 			{
-				object[] values = base.BaseGetAllValues();
-                for (int i = (values.Length - 1); i >= 0; i--)
-				{
-                    if (values[i] == null)
+                try
+                {
+                    object[] values = base.BaseGetAllValues();
+                    for (int i = (values.Length - 1); i >= 0; i--)
                     {
-                        if (i >= base.Count) continue;
-                        if (i < 0) break;
-                        base.BaseRemoveAt(i);
-                        continue;
+                        if (values[i] == null)
+                        {
+                            if (i >= base.Count) continue;
+                            if (i < 0) break;
+
+                            base.BaseRemoveAt(i);
+                            continue;
+                        }
+
+                        if (i < 0 || i > values.Length) break;
+
+                        CacheItem item = (CacheItem) values[i];
+                        bool hasExpired = item.HasExpired();
+                        //bool isUnderUsed = item.IsUnderUsed();
+
+                        //Debug.WriteLineIf(isUnderUsed, "Underused! Ratio: "+item.GetUsageRatio());
+                        //if (hasExpired || isUnderUsed)
+
+                        if (hasExpired)
+                        {
+                            removedObjects++;
+                            base.BaseRemove(item.Key);
+                        }
                     }
+                }
+                catch(Exception)
+                {
+                    // silence error.
+                }
 
-					CacheItem item = (CacheItem)values[i];
-					bool hasExpired = item.HasExpired();
-					//bool isUnderUsed = item.IsUnderUsed();
-
-					//Debug.WriteLineIf(isUnderUsed, "Underused! Ratio: "+item.GetUsageRatio());
-					//if (hasExpired || isUnderUsed)
-                  
-                    if (hasExpired)
-					{
-						removedObjects++;
-						base.BaseRemove(item.Key);
-					}
-				}
 			}
 
 		    return removedObjects;

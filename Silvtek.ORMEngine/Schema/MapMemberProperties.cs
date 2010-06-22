@@ -7,8 +7,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text;
 using System.Xml;
 using Silvtek.ORMEngine.Compression;
+using Silvtek.ORMEngine.Configs;
 using Silvtek.ORMEngine.Encryption;
 
 namespace Silvtek.ORMEngine.Schema
@@ -44,6 +46,7 @@ namespace Silvtek.ORMEngine.Schema
         private ColumnModeType modeType;
 
         private MemberAttributes attributes;
+        private Encoding encoding;
         
 
         #endregion
@@ -53,7 +56,7 @@ namespace Silvtek.ORMEngine.Schema
         internal ColumnModeType ModeType
         {
             get { return modeType; }
-            set { modeType = value; }
+           // set { modeType = value; }
         }
 
         public string ColumnName
@@ -325,6 +328,11 @@ namespace Silvtek.ORMEngine.Schema
             get { return defaultDefined; }
         }
 
+        public Encoding Encoding
+        {
+            get { return encoding; }
+        }
+
         #endregion
 
         #region ::- Internal Methods -::
@@ -371,6 +379,28 @@ namespace Silvtek.ORMEngine.Schema
             }
         }
 
+        internal void SetColumnModeType(ColumnModeType modeType)
+        {
+            this.modeType = modeType;
+            switch(modeType)
+            {
+                case ColumnModeType.IgnoreChanges:
+                    attributes = MapMemberAttributes | MemberAttributes.IgnoreChanges;
+                    break;
+                case ColumnModeType.ExcludeFromDigest:
+                    attributes = MapMemberAttributes | MemberAttributes.ExcludeFromDigest;
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+        internal void SetEncoding(Encoding encoding)
+        {
+            this.encoding = encoding;
+        }
+
         #endregion
 
         /// <summary>
@@ -392,6 +422,7 @@ namespace Silvtek.ORMEngine.Schema
             fileExtension = "bin"; // default extension;
             attributes = MemberAttributes.None;
             defaultDefined = false;
+            this.encoding = ORMConfigurator.DefaultEncoding;
         }
 
         /// <summary>

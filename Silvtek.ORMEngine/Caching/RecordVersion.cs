@@ -4,10 +4,8 @@
 #endregion
 
 using System;
-using System.Text;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Cryptography;
 using Silvtek.ORMEngine.Configs;
 using System.IO;
 
@@ -104,6 +102,7 @@ namespace Silvtek.ORMEngine.Caching
 
         private static void SaveRecordVersionToFile(ORMObject obj, RecordVersion version)
         {
+            if (obj == null) return;
 
             string file = GetFileName(obj);
             Stream serializationStream = null;
@@ -131,7 +130,9 @@ namespace Silvtek.ORMEngine.Caching
       
         internal static RecordVersion GetCurrentVersionFromSharedCachedFile(object obj)
         {
+            if (obj == null) return null;
             string file = GetFileName(obj);
+            
             if (!File.Exists(file))
             {
                 return null;
@@ -190,10 +191,12 @@ namespace Silvtek.ORMEngine.Caching
 
         private static string GetFileName(object obj)
         {
+            if (obj == null) return String.Empty;
+
             ORMObject orm = null;
             if (obj is ORMObject)
             {
-                orm = (ORMObject) orm;
+                orm = (ORMObject)obj;
             }
             else
             {
@@ -205,18 +208,17 @@ namespace Silvtek.ORMEngine.Caching
 
 
             string identifier = orm.GetRecordIdentifier();
-            byte[] data = Encoding.ASCII.GetBytes(identifier); 
-            MD5 md5 = new MD5CryptoServiceProvider();
-            byte[] result = md5.ComputeHash(data);
-            StringBuilder builder = new StringBuilder(1000);
-           
-            foreach(byte b in result)
+
+            if (identifier.Length < 2) return String.Empty;
+
+            string prefix = identifier.Substring(0, 2);
+            filename = String.Format(@"{0}\{1}\{2}.{3}", ORMConfigurator.BalancerShare, prefix, identifier, GlobalConstants.ORM_VERSION_CONTROL_EXTENSION);
+
+            if (!Directory.Exists(Path.GetDirectoryName(filename)))
             {
-                builder.AppendFormat("{0:X2}", b);
+                Directory.CreateDirectory(Path.GetDirectoryName(filename));
             }
 
-            string suffix = builder.ToString();
-            filename = String.Format(@"{0}\{1}.{2}.{3}", ORMConfigurator.BalancerShare, orm.SourceObject.GetType().FullName, suffix, GlobalConstants.ORM_VERSION_CONTROL_EXTENSION);
             orm.AddBagValue("RecordVersionFile", filename);
             return filename;
         }

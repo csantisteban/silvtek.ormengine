@@ -9,6 +9,9 @@ using System.Xml;
 
 namespace Silvtek.ORMEngine.Encryption
 {
+    /// <summary>
+    /// Default record digest provided.
+    /// </summary>
     public class DefaultRecordDigestProvider : RecordDigestProvider
     {
         public override string GenerateDigest(object[] values)
@@ -42,10 +45,7 @@ namespace Silvtek.ORMEngine.Encryption
             {
                 return DigestComparisonResult.Inconclusive;
             }
-
-          //  byte[] byte_1 = Convert.FromBase64String(text);
-          //  byte[] byte_2 = Convert.FromBase64String(digest);
-            
+          
             
             if (String.Compare(text, digest, false) != 0)
             {
@@ -54,26 +54,11 @@ namespace Silvtek.ORMEngine.Encryption
 
             return DigestComparisonResult.Equal;
 
-            //if (byte_1.Length != byte_2.Length)
-            //{
-            //    return DigestComparisonResult.Different;
-            //}
-
-            //for (int i = 0; i < byte_1.Length; i++)
-            //{
-            //    if (byte_1[i] != byte_2[i])
-            //    {
-            //        return DigestComparisonResult.Different;
-            //    }
-            //}
-
-
-            //return DigestComparisonResult.Equal;
         }
 
         private string CreateDigest(object[] values)
         {
-            MD5 md5 = new MD5CryptoServiceProvider();
+            SHA1 sha1 = new SHA1CryptoServiceProvider();
             byte[] sourceBytes = new byte[0];
             using (MemoryStream stream = new MemoryStream())
             {
@@ -83,7 +68,7 @@ namespace Silvtek.ORMEngine.Encryption
 
                     if (value.GetType() == typeof (String))
                     {
-                        string text = Convert.ToString(value).ToLower(CultureInfo.InvariantCulture);
+                        string text = Convert.ToString(value);
                         byte[] bytes = Encoding.UTF8.GetBytes(text);
                         stream.Write(bytes, 0, bytes.Length);
                     }
@@ -100,7 +85,7 @@ namespace Silvtek.ORMEngine.Encryption
                     }
                     else if (value.GetType().GetInterface("IConvertible", true) != null)
                     {
-                        string text = Convert.ToString(value).ToLower(CultureInfo.InvariantCulture);
+                        string text = Convert.ToString(value);
                         byte[] bytes = Encoding.UTF8.GetBytes(text);
                         stream.Write(bytes, 0, bytes.Length);
                     }
@@ -135,8 +120,8 @@ namespace Silvtek.ORMEngine.Encryption
                 stream.Close();
             }
 
-            byte[] result = md5.ComputeHash(sourceBytes);
-            return Base32.ToBase32String(result);
+            byte[] result = sha1.ComputeHash(sourceBytes);
+            return Utility.BytesToHex(result);
         }
     }
 }

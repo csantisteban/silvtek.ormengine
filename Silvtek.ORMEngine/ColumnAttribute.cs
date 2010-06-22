@@ -19,6 +19,7 @@ History:
 */
 
 using System;
+using System.Text;
 
 namespace Silvtek.ORMEngine
 {
@@ -40,6 +41,7 @@ namespace Silvtek.ORMEngine
         private readonly EnumConversionType enumConversionType; // Holds the convertion type if the datatype is an enumeration.
         private string fileExtension;
         private ColumnModeType modeType;
+        private Encoding encoding;
 
      #endregion
      
@@ -125,6 +127,12 @@ namespace Silvtek.ORMEngine
             set { modeType = value; }
         }
 
+        public Encoding Encoding
+        {
+            get { return encoding; }
+            set { encoding = value; }
+        }
+
 
         ///<summary>
         /// Constructor.
@@ -147,6 +155,8 @@ namespace Silvtek.ORMEngine
             enumType  = null;
             this.type = type;
             this.length = length;
+            this.encoding = Encoding.Default;
+
             this.defaultValue = defaultValue;
             fileExtension = String.Empty;
             modeType = ColumnModeType.Default;

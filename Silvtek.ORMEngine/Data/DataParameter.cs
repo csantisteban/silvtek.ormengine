@@ -49,6 +49,46 @@ namespace Silvtek.ORMEngine.Data
 			this.precision = 0;
 		}
 
+        /// <summary>
+        /// Creates a <see cref="IDbDataParameter" /> from specified command. 
+        /// </summary>
+        /// <param name="cmd">The CMD.</param>
+        /// <returns></returns>
+        public IDbDataParameter CreateFromCommand(Command cmd)
+        {
+            IDbDataParameter nativeParameter = cmd.CreateParameter();
+            nativeParameter.Precision = Precision;
+            nativeParameter.Scale = Scale;
+            nativeParameter.Size = Size;
+            nativeParameter.DbType = this.DbType;
+            nativeParameter.SourceColumn = SourceColumn;
+            nativeParameter.Value = Value;
+            nativeParameter.Direction = Direction;
+            nativeParameter.ParameterName = ParameterName;
+            nativeParameter.SourceVersion = this.SourceVersion;
+            return nativeParameter;
+        }
+
+        /// <summary>
+        /// Converts a instance of <see cref="IDbDataParameter" /> to the type used in the <see cref="Command" /> instance.
+        /// </summary>
+        /// <param name="cmd">The CMD.</param>
+        /// <param name="parameter">The parameter.</param>
+        /// <returns></returns>
+        public static IDbDataParameter Convert(Command cmd, IDbDataParameter parameter)
+        {
+            IDbDataParameter nativeParameter = cmd.CreateParameter();
+            nativeParameter.Precision = parameter.Precision;
+            nativeParameter.Scale = parameter.Scale;
+            nativeParameter.Size = parameter.Size;
+            nativeParameter.DbType = parameter.DbType;
+            nativeParameter.SourceColumn = parameter.SourceColumn;
+            nativeParameter.Value = parameter.Value;
+            nativeParameter.Direction = parameter.Direction;
+            nativeParameter.ParameterName = parameter.ParameterName;
+            nativeParameter.SourceVersion = parameter.SourceVersion;
+            return nativeParameter;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataParameter"/> class.

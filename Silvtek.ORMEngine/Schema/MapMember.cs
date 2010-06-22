@@ -4,6 +4,7 @@
 #endregion
 
 using System;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -26,6 +27,7 @@ namespace Silvtek.ORMEngine.Schema
         private readonly Type mapMemberType;
         private readonly MapMemberProperties properties;
         private readonly DbTypeFormatter formatter;
+        private readonly DbType dbType;
 
         #endregion
 
@@ -84,6 +86,11 @@ namespace Silvtek.ORMEngine.Schema
             get { return mapMemberType; }
         }
 
+        public DbType DbType
+        {
+            get { return dbType; }
+        }
+
         internal MapMember(MemberInfo member, MapMemberProperties properties, DbTypeFormatter formatter)
         {
             Debug.Assert((member != null), "member is null ");
@@ -108,7 +115,10 @@ namespace Silvtek.ORMEngine.Schema
                 mapMemberType = typeof (Object);
             }
 
+           
             properties.ApplyRules();
+
+            this.dbType = MapUtility.DbTypeMapping(properties, properties.DataType);
 
         }
 

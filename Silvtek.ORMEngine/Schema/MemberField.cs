@@ -20,7 +20,7 @@ namespace Silvtek.ORMEngine.Schema
     public class MemberField : ISerializable, IXmlSerializable
     {
 
-        private MapMember mapMember;
+        private readonly MapMember mapMember;
 
         // The original value.
         //private object beforeCommitValue;
@@ -36,15 +36,12 @@ namespace Silvtek.ORMEngine.Schema
 
         // Whether this field had been changed.
         private bool changed;
-        //private bool forceChanged;
-
-       // private bool alreadyUpdated;
 
         // Whether this field is a primary key.
         private readonly bool isPrimaryKey;
        
         internal event UpdateChangeDelegate Changed;
-        private object sourceObject;
+        private readonly object sourceObject;
 
 
         //internal event EventHandler OriginalValueChanged;
@@ -65,6 +62,10 @@ namespace Silvtek.ORMEngine.Schema
             get { return GetValue(); }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether [include in updates].
+        /// </summary>
+        /// <value><c>true</c> if [include in updates]; otherwise, <c>false</c>.</value>
         internal bool IncludeInUpdates
         {
             get
@@ -75,49 +76,11 @@ namespace Silvtek.ORMEngine.Schema
             }
         }
 
-        //internal bool AlreadyUpdated
-        //{
-        //    get { return alreadyUpdated; }
-        //}
 
 
-        ///<summary>
-        /// Gets the value of this field. This is the current value set to this field
-        ///</summary>
-        //        internal object Value
-        //        {
-        //            get { return currentValue; }
-        //            set
-        //            {        
-     
-        //                //if ((beforeCommitValue == null && value != null) || 
-        //                //    (beforeCommitValue != null && (!beforeCommitValue.Equals(value))))
-        //                if ( (currentValue != null && !currentValue.Equals(value)) || (value == null && currentValue != null))
-        //                {
-        //#if DEBUG
-        //                    string dbgMessage0 = String.Format("Field {0} is being set as changed for value: {1}", name, value);
-        //                    Debug.WriteLine(dbgMessage0);
-        //#endif
-        //                    SetValue(value);
-        //                    isChanged = true;
-        //                   // updateChange(Name);
-        //                }   
-        //            }
-        //        }
-
-        //internal void ForcedValue(object value)
-        //{
-        //    if ( (originalValue != null && value != null) || (originalValue != null && (!originalValue.Equals(value))))
-        //    {
-        //        alreadyUpdated = true;
-        //        beforeCommitValue = null;
-        //        currentValue = value;
-        //        isChanged = true;
-        //        updateChange(Name);
-        //    }
-
-        //}
-
+        /// <summary>
+        /// Refreshes the value from source.
+        /// </summary>
         internal void RefreshValueFromSource()
         {
             object value = GetValue();
@@ -146,7 +109,14 @@ namespace Silvtek.ORMEngine.Schema
 
 
                 changed = true;
-                if (Changed != null)Changed(Name);
+                try
+                {
+                    if (Changed != null) Changed(Name);
+                }
+                catch(Exception ex)
+                {
+                    Debug.WriteLine("Changed event raised an error" + ex.Message);
+                }
             }
 
         }
@@ -179,18 +149,12 @@ namespace Silvtek.ORMEngine.Schema
         }
 
 
-        ///<summary>
-        /// Constructor.
-        ///</summary>
-        ///<param name="name">
-        /// The property name.
-        ///</param>
-        ///<param name="value">
-        /// The value.
-        ///</param>
-        ///<param name="isPK">
-        /// Whether this is a primary key.
-        ///</param>
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MemberField"/> class.
+        /// </summary>
+        /// <param name="mapMember">The map member.</param>
+        /// <param name="sourceObject">The source object.</param>
         internal MemberField(MapMember mapMember, object sourceObject)
         {
             this.mapMember = mapMember;
@@ -218,6 +182,11 @@ namespace Silvtek.ORMEngine.Schema
             changed = false;
         }
 
+        /// <summary>
+        /// Creates the copy.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         internal static MemberField CreateCopy(MemberField source)
          {
              MemberField field = new MemberField(source, source.currentValue);
@@ -228,13 +197,6 @@ namespace Silvtek.ORMEngine.Schema
          }
 
 
-        /// <summary>
-        /// Gets the current value of a mapped member.
-        /// </summary>
-        /// <param name="source">the object in which the mapped member (property/field) will be retrieved.</param>
-        /// <remarks>
-        /// <note>This method uses reflection to get the value to the <paramref name="source"/> object.</note>
-        /// </remarks>
         private object GetValue()
         {
             if (sourceObject == null) return null;

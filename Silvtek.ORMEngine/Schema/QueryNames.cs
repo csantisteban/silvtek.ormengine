@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Silvtek.ORMEngine.Schema
 {
-    public class AliasMaps : StringDictionary
+    internal class AliasMaps : StringDictionary
     {
         internal AliasMaps()
         {
@@ -30,7 +30,7 @@ namespace Silvtek.ORMEngine.Schema
             base.Add(queryName, memberName);
         }
 
-        public string GetMemberName(string queryName)
+        internal string GetMemberName(string queryName)
         {
             return base[queryName];
         }

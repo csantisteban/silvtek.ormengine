@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="Silvtek.ORMEngine-1.7" default="project.build">
+
+  <property name="assembly.name" value="Silvtek.ORMEngineV1.7" />
+  <property name="net.frameworks" value="net-2.0,net-1.1" unless="${property::exists('net.frameworks')}" />
+  <property name="application.name" value="Silvtek.ORMEngineV1.7" unless="${property::exists('application.name')}"/>
+  <property name="project.company" value="Carlos Silva-Santisteban" unless="${property::exists('project.company')}"/>
+  <property name="project.startdate" value="01/01/2002" unless="${property::exists('project.startdate')}"/>
+  <property name="project.assemblyInfo.path" value="properties" />
+  <property name="project.buildsupport" value="_prj.buildsupport" unless="${property::exists('project.buildsupport')}" />
+  <property name="project.rootfolder" value="${project::get-base-directory()}\..\" unless="${property::exists('project.rootfolder')}"/>
+  <property name="project.path" value="${project.rootfolder}" />
+  <property name="project.ftpupload" value="true"  if="${not property::exists('project.ftpupload')}"/>
+  <property name="assembly.description" value="${assembly.name} Release ${datetime::now()}" />
+  <property name="strong.name.file" value="" />
+
+
+  <!-- PRIVATE VARIABLES - DO NOT CHANGE -->
+  <include buildfile="${environment::get-variable('workspace')}\nant\nant-common\GIT\globalvars.xml" />
+
+  <!-- use default: <property name="strong.name.file" value="" /> -->
+  <property name="assembly.title" value="${assembly.name}" />
+  <property name="assembly.copyright" value="Copyright (c)2002-2010, ${project.company}" />
+  <property name="assembly.guid" value="" />
+  <property name="assembly.clsCompliant" value="true" />
+  <property name="assembly.comVisible" value="false" />
+  <property name="create.docs" value="True"/>
+  <property name="help.HtmlHelpName" value="${assembly.name}" />
+  <property name="help.title" value="${assembly.name} Documentation" />
+  <property name="help.copyright" value="Copyright (c)2010, ${project.company}" />
+  <property name="build.types" value="Release" />
+
+
+  <!-- current project settings -->
+  <include buildfile="${environment::get-variable('workspace')}\nant\nant-common\GIT\versioning.xml" />
+  <include buildfile="${environment::get-variable('workspace')}\nant\nant-common\GIT\extensions.xml" />
+
+
+  <target name="assembly.build">
+    <property name="net.frameworks" value="net-2.0,net-1.1" />
+    <echo message="project path: ${project.path}" />
+    <call target="extension.build.multiple.versions"/>
+  </target>
+
+  <target name="project.build">
+    <echo message="project path: ${project.path}" />
+    <property name="strong.name.file" value="" />
+    <call target="extension.build"/>
+
+    <!--<if test="${property::exists('prj.references.directory')}">-->
+    <echo message="****** copy build to: ${prj.references.directory}" />
+    <copy todir="${prj.references.directory}"   >
+      <fileset basedir="${build.path}">
+        <include name="${assembly.name}.dll" />
+      </fileset>
+    </copy>
+    <!--</if>-->
+  </target>
+
+  <property name="project.compiler.sources.target" value="_sourcefiles" />
+  <property name="project.compiler.resources.target" value="_resources" />
+  <property name="project.compiler.references.target" value="_references" />
+
+  <!-- Handle the source file for compiling in net-3.0 -->
+  <target name="_sourcefiles">
+    <if test="${nant.settings.currentframework=='net-2.0'}">
+      <fileset id="build.sources" basedir="${source.path}">
+        <include name="**/*.${language.fileextension}"/>
+        <exclude name="_prj.tests/*.*" />
+        <exclude name="_ReSharper**" />
+      </fileset>
+    </if>
+    <if test="${nant.settings.currentframework=='net-3.5'}">
+      <fileset id="build.sources" basedir="${source.path}">
+        <include name="**/*.${language.fileextension}"/>
+        <exclude name="_prj.tests/*.*" />
+        <exclude name="_ReSharper**" />
+      </fileset>
+    </if>
+    <if test="${nant.settings.currentframework=='net-1.1'}">
+      <fileset id="build.sources" basedir="${source.path}">
+        <include name="**/*.${language.fileextension}"/>
+        <exclude name="_prj.tests/*.*" />
+        <exclude name="_ReSharper**" />
+        <exclude name="resource.designer.cs" />
+      </fileset>
+    </if>
+  </target>
+
+  <target name="_references">
+    <if test="${nant.settings.currentframework=='net-2.0'}">
+      <fileset id="build.references" basedir="${project.rootfolder}\_prj.references\">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+      <fileset id="ndoc.assemblies" basedir="${project.rootfolder}\_prj.references\">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+    </if>
+    <if test="${nant.settings.currentframework=='net-1.1'}">
+
+      <fileset id="build.references" basedir="${project.rootfolder}\_prj.references\net-1.1">
+        <include name="**/*.dll"/>
+      </fileset>
+      <fileset id="ndoc.assemblies" basedir="${project.rootfolder}\_prj.references\net-1.1">
+        <include name="**/*.dll"/>
+      </fileset>
+    </if>
+
+  </target>
+
+
+  <!-- handled the compilation of resources embedded in the project.-->
+  <target name="_resources">
+    <resourcefileset id="build.resources" prefix="${assembly.name}" dynamicprefix="true">
+      <include name="${source.path}\*.resx"/>
+    </resourcefileset>
+  </target>
+</project>

@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using Silvtek.ORMEngine.Encryption;
@@ -1127,7 +1129,7 @@ namespace Silvtek.ORMEngine.Schema
             }
 
             object parsedEnum = null;
-            Trace.Assert(mappedMember.Properties.EnumerationType != null, "Enumeration type has not been defined");
+            //Trace.Assert(mappedMember.Properties.EnumerationType != null, "Enumeration type has not been defined");
 
             if (mappedMember.Properties.EnumConversionType == EnumConversionType.ByName)
             {
@@ -1189,6 +1191,11 @@ namespace Silvtek.ORMEngine.Schema
                     continue;
                 }
 
+                if (member.Properties.ContainsAttribute(MemberAttributes.IgnoreChanges) || member.Properties.ContainsAttribute(MemberAttributes.ExcludeFromDigest))
+                {
+                    continue;
+                }
+
                 list.Add(member.GetMemberValue(obj));
             }
 
@@ -1198,6 +1205,26 @@ namespace Silvtek.ORMEngine.Schema
 
             return String.Format("[{1}]{0}", provider.GenerateDigest(objs), version);
 
+        }
+
+        internal static string GenerateStandardRecordDigest(MapMemberList members, object obj)
+        {
+            ArrayList list = new ArrayList();
+            foreach (MapMember member in members)
+            {
+                if (member.Properties.HasRecordDigestProvider || member.Properties.ContainsAttribute(MemberAttributes.IgnoreChanges) || member.Properties.ContainsAttribute(MemberAttributes.ExcludeFromDigest))
+                {
+                    continue;
+                }
+
+                list.Add(member.GetMemberValue(obj));
+            }
+
+            if (list.Count == 0) return String.Empty;
+            RecordDigestProvider provider = new DefaultRecordDigestProvider();
+            object[] objs = (object[]) list.ToArray(typeof (object));
+
+            return provider.GenerateDigest(objs);
         }
 
         internal static int GetRecordVersion(string fulldigestText)
@@ -1304,5 +1331,87 @@ namespace Silvtek.ORMEngine.Schema
             return digest;
         }
 
+        internal static DbType DbTypeMapping(MapMemberProperties properties, DataType dataType)
+        {
+            switch (dataType)
+            {
+
+                case DataType.String:
+                {
+                    if (properties.Encoding == Encoding.ASCII)
+                    {
+                        return DbType.AnsiString;
+                    }
+                    else
+                    {
+                        return DbType.String;
+                    }
+                }
+                case DataType.Enum:
+                    {
+                        return DbType.AnsiString;
+                    }
+                case DataType.DateTime:
+                    {
+
+                        return DbType.DateTime;
+
+                    }
+                case DataType.Int16:
+
+                    {
+                        return DbType.Int16;
+                    }
+                case DataType.Int32:
+                    {
+                        return DbType.Int32;
+                    }
+                case DataType.Int64:
+                    {
+                        return DbType.Int64;
+                    }
+                case DataType.Double:
+                    {
+                        return DbType.Double;
+                    }
+                case DataType.Byte:
+                    {
+                        return DbType.Byte;
+                    }
+                case DataType.Boolean:
+                    {
+                        return DbType.Boolean;
+                    }
+                case DataType.Decimal:
+                    {
+                        return DbType.Decimal;
+                    }
+                case DataType.Single:
+                    {
+                        return DbType.Single;
+                    }
+                case DataType.Guid:
+                    {
+                        return DbType.Guid;
+                    }
+                case DataType.Xml:
+                    {
+                        return DbType.String;
+                    }
+                case DataType.Object:
+                    {
+                        return DbType.Binary;
+                    }
+                case DataType.Binary:
+                    {
+                        return DbType.Binary;
+                    }
+                default:
+                    {
+                        return DbType.String;
+                    }
+
+            }
+        }
     }
 }

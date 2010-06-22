@@ -8,6 +8,7 @@ using System.Collections;
 using System.Data;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 using Silvtek.ORMEngine.Caching;
 using Silvtek.ORMEngine.Configs;
 using Silvtek.ORMEngine.Data;
@@ -20,31 +21,11 @@ namespace Silvtek.ORMEngine
 	/// </summary>
 	public sealed class ORM
 	{
-
+        
 		private ORM()
 		{
 		}
 
-        /// <summary>
-        /// Defines the type of behavior for a single Field.
-        /// </summary>
-        //public enum FieldBehavior : byte
-        //{
-        //     <summary>
-        //     Defines that when the field is empty, use the default value specified in the ORM mapping.
-        //     </summary>
-        //    WhenEmptyUseDefault,
-
-        //     <summary>
-        //     Defines that when the field is empty, skip.
-        //     </summary>
-        //    WhenEmptySkip,
-
-        //     <summary>
-        //     Ensure to use all fields.
-        //     </summary>
-        //    UseAll
-        //}
 
 		/// <summary>
 		/// Gets the number of types loaded into the ORM Cache.
@@ -65,11 +46,21 @@ namespace Silvtek.ORMEngine
 		/// <summary>
 		/// Locks an <see cref="ORMObject" />.
 		/// </summary>
-		/// <param name="objInstance">The instance to be locked.</param>
-		public static void Lock(ORMObject objInstance)
+		/// <param name="ormObject">The instance to be locked.</param>
+		public static void Lock(ORMObject ormObject)
 		{
-            objInstance.ObjectInfo.Locked();
+            ormObject.ObjectInfo.Locked();
 		}
+
+        /// <summary>
+        /// Gets the bound object.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns></returns>
+        public static object GetBoundObject(ORMObject obj)
+        {
+            return obj.SourceObject;
+        }
 
 		/// <summary>
 		/// Sets the connection name for a specific type
@@ -101,15 +92,54 @@ namespace Silvtek.ORMEngine
                 return (ORMObject)source;
             }
 
-
             return new ORMObject(source);
-
         }
 
+   
+
+        #region -- CreateAsync Methods --
+
+
+        /// <summary>
+        /// Creates a new record in the database from the object provided. The object provided 
+        /// in the parameter must be a mapped to a table.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public static IAsyncResult BeginCreate(object source, AsyncCallback callback, object state)
+        {
+            ORMObject orm = Instanciate(source);
+            return orm.BeginCreate(callback, state);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="result">The result.</param>
+        /// <returns></returns>
+        public static ORMObject EndCreate(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMCreateCaller ormActionDelegate = (ORMCreateCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+        #endregion 
+
+
+        /// <summary>
+        /// Creates the specified orm object in the database. This method
+        /// will create a insert statement.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         public static ORMObject Create(object source)
         {
             return Create(source, false);
         }
+
 
         /// <summary>
         /// Creates a record in the database for the mapped instance passed in the argument.
@@ -136,81 +166,69 @@ namespace Silvtek.ORMEngine
             return orm;
         }
 
+
+        /// <summary>
+        /// Saves object to the database asynchrously.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public static IAsyncResult BeginSave(object source, AsyncCallback callback, object state)
+        {
+            return BeginSave(source, false, callback, state);
+        }
+
+        /// <summary>
+        /// Saves object to the database asynchrously.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="synchronized">Synch this object with other instances representing same record.</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public static IAsyncResult BeginSave(object source, bool synchronized, AsyncCallback callback, object state)
+        {
+            ORMObject orm = Instanciate(source);
+
+            bool load = (orm.ObjectInfo.BindingStatus != BindingStatus.Bound);
+            if (synchronized)
+            {
+                lock (orm.SyncRoot)
+                {
+                    return orm.BeginSave(load, callback, state);
+                }
+            }
+            else
+            {
+                return orm.BeginSave(load, callback, state);
+            }
+        }
+
+        public static ORMObject EndSave(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMSaveCaller ormActionDelegate = (ORMSaveCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+        /// <summary>
+        /// Saves object to the database
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         public static ORMObject Save(object source)
         {
             return Save(source, false);
         }
 
-
-        public static DateTime GetServerDateTime(string connectionName)
-        {
-            Connection cnn = ConnectionManager.Current.GetConnection(connectionName);
-
-            Command cmd = new Command(cnn);
-            cmd.CommandText = cnn.DbTypeFormatter.GetServerDateTimeCommand();
-            cmd.CommandType = CommandType.Text;
-            DateTime result = DateTime.MinValue;
-            try
-            {
-                cnn.Open();
-                object tmp = cmd.ExecuteScalar();
-                if (tmp != null)
-                {
-                    result = Convert.ToDateTime(tmp);
-                }
-
-            }
-            finally
-            {
-                if (cnn != null)cnn.Close();
-            }
-
-            return result;
-        }
-
-        public static DateTime GetServerDateTime(Type type)
-        {
-            ObjectSchemaInfo objectInfo = ORM.GetObjectInfo(type);
-            Connection cnn = objectInfo.GetConnection();
-
-            Command cmd = new Command(cnn);
-            cmd.CommandText = cnn.DbTypeFormatter.GetServerDateTimeCommand();
-            cmd.CommandType = CommandType.Text;
-            DateTime result = DateTime.MinValue;
-            try
-            {
-                cnn.Open();
-                object tmp = cmd.ExecuteScalar();
-                if (tmp != null)
-                {
-                    result = Convert.ToDateTime(tmp);
-                }
-
-            }
-            finally
-            {
-                if (cnn != null) cnn.Close();
-            }
-
-            return result;  
-        }
-
-        public static DigestComparisonResult CompareRecordDigest(object obj)
-        {
-            ORMObject orm = Instanciate(obj);
-            bool load = (orm.ObjectInfo.BindingStatus != BindingStatus.Bound);
-            if (!load)
-            {
-                orm.Load();
-            }
-
-            return orm.CompareRecordDigest();
-        }
-
-
+        /// <summary>
+        /// Saves the specified source.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="synchronized">Synch this object with other instances representing same record.</param>
+        /// <returns></returns>
         public static ORMObject Save(object source, bool synchronized)
         {
-
             ORMObject orm = Instanciate(source);
 
             bool load = (orm.ObjectInfo.BindingStatus != BindingStatus.Bound);
@@ -220,21 +238,24 @@ namespace Silvtek.ORMEngine
                 lock (orm.SyncRoot)
                 {
                     orm.Save(load);
-                    Trace.WriteLineIf(orm.Result != ActionResult.Succeed, "record not updated " + source.GetType().FullName + ". result: " + orm.Result);
                 }
             }
             else
             {
                 orm.Save(load);
-                Trace.WriteLineIf(orm.Result != ActionResult.Succeed, "record not updated " + source.GetType().FullName + ". result: " + orm.Result);
-
             }
 
             return orm;
       
         }
 
-        public object[] Instanciate(Type type, DataTable dt)
+        /// <summary>
+        /// Instanciates the specified type from a datatable. 
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="dt">The dt.</param>
+        /// <returns></returns>
+        public static object[] Instanciate(Type type, DataTable dt)
         {
             ArrayList objects = new ArrayList();
 
@@ -260,13 +281,14 @@ namespace Silvtek.ORMEngine
                     if (currentObj == null)
                     {
 
-                        currentObj = Activator.CreateInstance(info.Type, BindingFlags.NonPublic |
-                                                                         BindingFlags.Public | BindingFlags.Instance,
-                                                              null, null, null);
+                        currentObj = Activator.CreateInstance(info.Type, BindingFlags.NonPublic | 
+                                                                         BindingFlags.Public    | 
+                                                                         BindingFlags.Instance,
+                                                                                               null, null, null);
 
                         if (currentObj is ORMObject)
                         {
-                            ormObj = ORM.Instanciate(currentObj);
+                            ormObj = Instanciate(currentObj);
                         }
 
 
@@ -274,7 +296,9 @@ namespace Silvtek.ORMEngine
                     }
 
                     if (columns[columnCounter].Properties.AcceptNulls && Convert.IsDBNull(row[columns[0].ColumnName]))
+                    {
                         continue;
+                    }
 
                     if (columns[columnCounter].Properties.DataType != DataType.Binary)
                     {
@@ -314,84 +338,114 @@ namespace Silvtek.ORMEngine
         }
 
 
-	    ///// <summary>
-        ///// Express Update
-        ///// </summary>
-        ///// <param name="source">The object to be updated</param>
-        ///// <remarks>Use ORMObject.Store for better manipulation of data.</remarks>
-        ///// <returns></returns>
-        //public static ActionResult Store(object source)
-        //{
-        //    return Store(source, FieldBehavior.UseAll);
-        //}
+        /// <summary>
+        /// Gets the database server date time.
+        /// </summary>
+        /// <param name="connectionName">Name of the connection.</param>
+        /// <returns></returns>
+        public static DateTime GetServerDateTime(string connectionName)
+        {
+            Connection cnn = ConnectionManager.Current.GetConnection(connectionName);
 
-        ///// <summary>
-        ///// Express Update
-        ///// </summary>
-        ///// <param name="source">The object to be updated</param>
-        ///// <param name="allowNullFields">Whether to allow to update mpty or null fields contained in
-        /////  the source object</param>
-        ///// <remarks>Use ORMObject.Store for better manipulation of data.</remarks>
-        ///// <returns></returns>
-        //public static ActionResult Store(object source, FieldBehavior  behaviour)
-        //{
-            
-        //    object copy = Activator.CreateInstance(source.GetType(), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null);
-            
-        //    // Instanciate ORM Object for source and copy.
-        //    ORMObject ormObjectCopy = Instanciate(copy);
-        //    ORMObject ormObject = Instanciate(source);
-            
-        //    ObjectSchemaInfo objectInfo = GetObjectInfo(source.GetType());
-        //    MapMember[] pks = objectInfo.MappedMembers.GetAllPrimaryKeyMembers();
+            Command cmd = new Command(cnn);
+            cmd.CommandText = cnn.DbTypeFormatter.GetServerDateTimeCommand();
+            cmd.CommandType = CommandType.Text;
+            DateTime result = DateTime.MinValue;
+            try
+            {
+                cnn.Open();
+                object tmp = cmd.ExecuteScalar();
+                if (tmp != null)
+                {
+                    result = Convert.ToDateTime(tmp);
+                }
 
-        //    foreach (MapMember pk in pks)
-        //    {
-        //        object originalValue = pk.GetValue(source);
-        //        pk.SetValue(copy, originalValue);
-        //    }
+            }
+            finally
+            {
+                cnn.Close();
+            }
 
-        //    // now load the copy.
-        //    ormObjectCopy.Load();
+            return result;
+        }
 
-        //    if (ormObjectCopy.Result != ActionResult.Succeed) return ormObjectCopy.Result;
-          
-        //    // now copy the rest of the members to make an update.
+        /// <summary>
+        /// Gets the server date time.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public static DateTime GetServerDateTime(Type type)
+        {
+            ObjectSchemaInfo objectInfo = ORM.GetObjectInfo(type);
+            Connection cnn = objectInfo.GetConnection();
 
-        //    foreach(MapMember mappedMember in objectInfo.MappedMembers)
-        //    {
-        //        if (mappedMember.Properties.IsPrimaryKey)continue;
+            Command cmd = new Command(cnn);
+            cmd.CommandText = cnn.DbTypeFormatter.GetServerDateTimeCommand();
+            cmd.CommandType = CommandType.Text;
+            DateTime result = DateTime.MinValue;
+            try
+            {
+                cnn.Open();
+                object tmp = cmd.ExecuteScalar();
+                if (tmp != null)
+                {
+                    result = Convert.ToDateTime(tmp);
+                }
 
-        //        object originalValue = mappedMember.GetValue(source);
-                
-        //        // check if the value is empty.
-        //        bool isEmpty = (originalValue == null || Convert.ToString(originalValue).Length == 0);
-        //        if (isEmpty && behaviour == FieldBehavior.WhenEmptySkip) continue;
-        //        if (isEmpty && behaviour == FieldBehavior.WhenEmptyUseDefault)
-        //        {
-        //            originalValue = mappedMember.Properties.DefaultValue;
-        //        }
+            }
+            finally
+            {
+                cnn.Close();
+            }
 
-        //        object copyValue = mappedMember.GetValue(copy);
-        //        if (originalValue != copyValue)
-        //        {
-        //            if ((!mappedMember.Properties.AcceptNulls) && originalValue == null)
-        //            {
-        //                string exMsg = Utility.GetResourceString("ORM_STORE_PARTIAL_INITIALIZED_OBJ",source.GetType().FullName, mappedMember.MemberName);
-        //                throw new ORMException(exMsg);
-        //            }
+            return result;
+        }
 
-        //            mappedMember.SetValue(copy, originalValue);
-        //        }
-        //    }
+        /// <summary>
+        /// Compares the record digest of the specified object againts the digest stored
+        /// in the database. Object must have a record digest column specified.
+        /// </summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns></returns>
+        public static DigestComparisonResult CompareRecordDigest(object obj)
+        {
+            ORMObject orm = Instanciate(obj);
+            bool load = (orm.ObjectInfo.BindingStatus != BindingStatus.Bound);
+            if (!load)
+            {
+                orm.Load();
+            }
 
-        //    ormObjectCopy.Save();
+            return orm.CompareRecordDigest();
+        }
 
-        //    return ormObjectCopy.Result;
-            
 
-        //}
 
+        /// <summary>
+        /// Loads a object asynchronously
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        public static IAsyncResult BeginLoad(object source, AsyncCallback callback, object state)
+        {
+            ORMObject ormObject = Instanciate(source);
+            return ormObject.BeginLoad(callback, state);
+        }
+
+        public static ORMObject EndLoad(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMLoadCaller ormActionDelegate = (ORMLoadCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+        /// <summary>
+        /// Loads the specified source.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         public static ORMObject Load(object source)
         {
             ORMObject ormObject = Instanciate(source);
@@ -399,11 +453,53 @@ namespace Silvtek.ORMEngine
             return ormObject;
         }
 
+        /// <summary>
+        /// Refresh current object directly from database. This method will bypass any cached object.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="callback">The callback.</param>
+        /// <param name="state">The state.</param>
+        /// <returns></returns>
+        public static IAsyncResult BeginRefresh(object source, AsyncCallback callback, object state)
+        {
+            ORMObject ormObject = Instanciate(source);
+            return ormObject.BeginRefresh(callback, state);
+        }
+
+        public static ORMObject EndRefresh(IAsyncResult result)
+        {
+            if (result == null) return null;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMLoadCaller ormActionDelegate = (ORMLoadCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
+        }
+
+
+        /// <summary>
+        /// Refreshes the specified source.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         public static ORMObject Refresh(object source)
         {
             ORMObject ormObject = Instanciate(source);
             ormObject.Refresh();
             return ormObject;
+        }
+
+
+        public static IAsyncResult BeginRemove(object source, AsyncCallback callback, object state)
+        {
+            ORMObject orm = Instanciate(source);
+            return orm.BeginRemove(callback, state);
+        }
+
+        public static ActionResult EndRemove(IAsyncResult result)
+        {
+            if (result == null) return ActionResult.Undefined;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ORMRemoveCaller ormActionDelegate = (ORMRemoveCaller)asyncResult.AsyncDelegate;
+            return ormActionDelegate.EndInvoke(result);
         }
 
         /// <summary>
@@ -416,6 +512,7 @@ namespace Silvtek.ORMEngine
             return Remove(source, false);
         }
 
+     
         /// <summary>
         /// Removes a record from the database for the object passed. The object must have their primary key fields populated.
         /// </summary>
@@ -464,6 +561,7 @@ namespace Silvtek.ORMEngine
             QueryCache.EmptyCache(type);
         }
 
+
 		/// <summary>
 		/// Returns the object schema.
 		/// </summary>
@@ -481,7 +579,12 @@ namespace Silvtek.ORMEngine
 			return info;
 		}
 
-        
+
+        /// <summary>
+        /// Copies the specified source.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="dest">The dest.</param>
         internal static void Copy(object source, object dest)
         {
             if (source.GetType() != dest.GetType())
@@ -497,9 +600,15 @@ namespace Silvtek.ORMEngine
             }         
         }
 
-        internal static bool HasDifferentValues(object source, object dest)
+        /// <summary>
+        /// Test whether two object of the same type are different database instances
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="dest">The dest.</param>
+        /// <returns></returns>
+        internal static bool AreDifferent(object source, object dest)
         {
-            if (source == null || dest == null) return true;
+            if (source == null || dest == null) return false;
 
             if (source.GetType() != dest.GetType())
             {
@@ -534,7 +643,6 @@ namespace Silvtek.ORMEngine
 
             return false;
         }
-
 
 	}
 }

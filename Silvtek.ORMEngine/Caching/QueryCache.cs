@@ -20,8 +20,8 @@ namespace Silvtek.ORMEngine.Caching
 	{
 		
         // Holds the cache singleton.
-		private static QueryCache   cache = null;
-        private const int period = 21000; 
+		private static QueryCache  cache = null;
+        private const int period = 30000; 
 		private readonly Timer timer;
 		private readonly CacheItemList items;
 		private bool isTimerStarted;
@@ -80,15 +80,7 @@ namespace Silvtek.ORMEngine.Caching
 			items.Add(item);
 		}
 
-        //internal void AddItem(OLDResultSet resultSet, Type mainType, TimeController timeController)
-        //{
-        //    // Do not add to the cache if the item has expired already
-        //    if ( timeController.HasExpired() ) return;
-
-        //    StartTimer();
-        //    CacheItem item = new CacheItem(resultSet.Identifier, resultSet, mainType, timeController);
-        //    items.Add(item);
-        //}
+ 
 
 
 		internal void AddItem(string key, object obj, Type mainType, TimeController timeController)
@@ -124,7 +116,7 @@ namespace Silvtek.ORMEngine.Caching
 			{
 				Debug.WriteLine("Cache Timer Started", Resources.TRACE_CATEGORY);
 				isTimerStarted = true;
-				timer.Change(0, period);
+                timer.Change(period, period);
 			}
 		}
 

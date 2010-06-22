@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Data;
 using Silvtek.ORMEngine.Data;
+using Silvtek.ORMEngine.Schema;
 
 namespace Silvtek.ORMEngine.DataQuery
 {
@@ -56,6 +57,26 @@ namespace Silvtek.ORMEngine.DataQuery
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         /// <param name="dbtype">The dbtype.</param>
+        public void AppendParameter(string name, object value, DbType dbtype, int length)
+        {
+            parameterIdentifiers.Add(String.Format("{0}:{1}", name, value));
+            IDbDataParameter parameter = new DataParameter();
+            parameter.ParameterName = name;
+            parameter.Value = value;
+            parameter.DbType = dbtype;
+            parameter.Size = length;
+            
+
+            if (!table.Contains(name))
+            {
+                table.Add(name, parameter);
+            }
+            else
+            {
+                table[name] = parameter;
+            }
+        }
+
         public void AppendParameter(string name, object value, DbType dbtype)
         {
             parameterIdentifiers.Add(String.Format("{0}:{1}", name, value));
@@ -63,6 +84,7 @@ namespace Silvtek.ORMEngine.DataQuery
             parameter.ParameterName = name;
             parameter.Value = value;
             parameter.DbType = dbtype;
+
 
             if (!table.Contains(name))
             {
@@ -117,11 +139,6 @@ namespace Silvtek.ORMEngine.DataQuery
         /// <returns></returns>
         public DataTable ExecuteDataTable()
         {
-            /// string[] parameterskeys = (String[])parameterIdentifiers.ToArray(typeof(String));
-            // string list = String.Join("|", parameterskeys);
-            // string pseudoSql = String.Format("{0}>{1}", storedprocedure, list);
-            // string queryIdentifier = QueryBase.GenerateQueryIdentifier(typeof(DataSet), pseudoSql);
-
             DataTable datatable = new DataTable();
             DataReader reader = null;
             try
@@ -140,14 +157,12 @@ namespace Silvtek.ORMEngine.DataQuery
 
                     datatable.Rows.Add(row);
                 }
-                
-                //datatable.Load(reader, LoadOption.OverwriteChanges);
+               
             }
             finally
             {
                 if (reader != null) reader.Close();
             }
-
 
             return datatable;
            
@@ -169,7 +184,7 @@ namespace Silvtek.ORMEngine.DataQuery
             foreach (IDbDataParameter parameter in table.Values)
             {
                 if (parameter == null) continue;
-                cmd.Parameters.Add(parameter);
+                cmd.Parameters.Add(DataParameter.Convert(cmd, parameter));
             }
 
             return cmd.ExecuteReader(CommandBehavior.CloseConnection);
@@ -198,7 +213,7 @@ namespace Silvtek.ORMEngine.DataQuery
                 foreach (IDbDataParameter parameter in table.Values)
                 {
                     if (parameter == null) continue;
-                    cmd.Parameters.Add(parameter);
+                    cmd.Parameters.Add(DataParameter.Convert(cmd, parameter));
                 }
 
                 recordsAffected = cmd.ExecuteNonQuery();
@@ -254,7 +269,7 @@ namespace Silvtek.ORMEngine.DataQuery
                 foreach (IDbDataParameter parameter in table.Values)
                 {
                     if (parameter == null) continue;
-                    cmd.Parameters.Add(parameter);
+                    cmd.Parameters.Add(DataParameter.Convert(cmd, parameter));
                 }
 
                 result = cmd.ExecuteScalar();
@@ -268,6 +283,55 @@ namespace Silvtek.ORMEngine.DataQuery
             }
 
             return result;
+        }
+
+
+        public void LoadParameters(ORMObject obj)
+        {
+           string prefix = obj.ObjectInfo.Schema.DbTypeFormatter.ParameterizedPrefix;
+
+           foreach(MapMember member in obj.ObjectInfo.MappedMembers)
+           {
+               string name = String.Format("{0}{1}",prefix, member.ColumnName);
+               object value = member.GetDataSourceValue(obj);
+
+               if (member.Properties.DataType == DataType.String)
+               {
+                   if (member.Properties.Length > 0)
+                   {
+                       AppendParameter(name, value, member.DbType, member.Properties.Length);
+                   }
+                   else
+                   {
+                       AppendParameter(name, value, member.DbType);
+                   }
+               }
+               else
+               {
+                   AppendParameter(name, value, member.DbType);
+               }
+           }
+        }
+
+        public void LoadParameters(object obj)
+        {
+            ORMObject ormObj = ORM.Instanciate(obj);
+            LoadParameters(ormObj);
+        }
+
+        public static int ExecuteNonQuery(string connectionName, string storedProcedure, object obj)
+        {
+            SPQuery query = new SPQuery(storedProcedure, connectionName);
+            query.LoadParameters(obj);
+            return query.ExecuteNonQuery();
+        }
+
+        public static int ExecuteNonQuery(string storedProcedure, object obj)
+        {
+            string connectionName = ORM.GetObjectInfo(obj.GetType()).ConnectionName;
+            SPQuery query = new SPQuery(storedProcedure, connectionName);
+            query.LoadParameters(obj);
+            return query.ExecuteNonQuery();
         }
     }
 }

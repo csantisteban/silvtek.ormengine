@@ -14,6 +14,7 @@ namespace Silvtek.ORMEngine
            ///<summary>Load</summary>
            Load	= 4,
 
+           Batch = 5,
           // RunMethod = 5,
 
            //Query = 5,

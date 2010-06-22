@@ -12,6 +12,9 @@ namespace Silvtek.ORMEngine
         Unique = 8,
         DatabaseIdentity = 16 | SyncField,
         Timestamp = 32,
-        SyncField = 64
+        SyncField = 64,
+        IgnoreChanges = 128,
+        RecordDigest = 256,
+        ExcludeFromDigest = 512
     }
 }

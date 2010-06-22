@@ -5,7 +5,6 @@
 
 using System;
 using System.Data;
-using System.Threading;
 using Silvtek.ORMEngine.ObjectPooling;
 
 namespace Silvtek.ORMEngine.Data
@@ -54,6 +53,8 @@ namespace Silvtek.ORMEngine.Data
 
         // Hold the last time the connection has executed against the database.
         private DateTime lastExecutionDateTime;
+
+        private int commandTimeout;
 
     #endregion
     
@@ -228,6 +229,11 @@ namespace Silvtek.ORMEngine.Data
            get {  return lastExecutionDateTime; }
         }
 
+        public int CommandTimeout
+        {
+            get { return commandTimeout; }
+        }
+
 
         private Connection()
         {
@@ -236,6 +242,7 @@ namespace Silvtek.ORMEngine.Data
             dbtype = null;
             providerType = ProviderType.Undefined;
             timeout = 0;
+            commandTimeout = 90;
         }
 
         private void SetConnectionInformation(ConnectionInfo cnnInfo)
@@ -246,6 +253,7 @@ namespace Silvtek.ORMEngine.Data
             dbtype = connectionInfo.DbTypeFormatter;
             providerType = connectionInfo.Provider.Type;
             timeout = connectionInfo.Timeout;
+            commandTimeout = connectionInfo.CommandTimeout;
         }
 
         internal static Connection CreateConnection(ConnectionInfo cnnInfo)
@@ -301,7 +309,7 @@ namespace Silvtek.ORMEngine.Data
 		/// <returns>An <B>IDbCommand</B> object</returns>
 		public virtual IDbCommand CreateCommand()
 		{
-		  return connection.CreateCommand();
+            return connection.CreateCommand();
 		}
 
 

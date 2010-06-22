@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="DefaultQueryCacheTime">
+    <xs:complexType>
+      <xs:attribute name="milliseconds" type="xs:int" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Encoding">
+    <xs:complexType>
+      <xs:attribute name="value" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="ASCII"/>
+            <xs:enumeration value="Default"/>
+            <xs:enumeration value="Unicode"/>
+            <xs:enumeration value="UTF7"/>
+            <xs:enumeration value="UTF8"/>
+            <xs:enumeration value="UTF32"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="UpdateBroadcast">
+    <xs:complexType>
+      <xs:attribute name="enabled" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:boolean"/>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="bufferSize">
+    <xs:complexType>
+      <xs:attribute name="size" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:int"/>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="connection">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="connectionString"/>
+        <xs:element ref="connectionProvider"/>
+        <xs:element ref="dbTypeFormatter"/>
+      </xs:sequence>
+      <xs:attribute name="name" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="default" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:boolean"/>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="timeout" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:int"/>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="preparedStatements" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:boolean"/>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="commandTimeout" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:int"/>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="connectionProvider">
+    <xs:complexType>
+      <xs:attribute name="class" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="assembly" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="connectionString">
+    <xs:simpleType>
+      <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+  </xs:element>
+  <xs:element name="dataSettings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="mapFiles"/>
+        <xs:element ref="Encoding"/>
+        <xs:element ref="workingFolder"/>
+        <xs:element ref="sharedResources"/>
+        <xs:element ref="globalCache"/>
+        <xs:element ref="temporaryFolder"/>
+        <xs:element ref="bufferSize"/>
+        <xs:element ref="DefaultQueryCacheTime"/>
+        <xs:element ref="UpdateBroadcast"/>
+        <xs:element ref="connection"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="dbTypeFormatter">
+    <xs:complexType>
+      <xs:attribute name="class" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="assembly" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="globalCache">
+    <xs:complexType>
+      <xs:attribute name="enabled" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:boolean"/>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="mapFiles">
+    <xs:complexType>
+      <xs:attribute name="path" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="sharedResources">
+    <xs:complexType>
+      <xs:attribute name="path" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="temporaryFolder">
+    <xs:complexType>
+      <xs:attribute name="path" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="workingFolder">
+    <xs:complexType>
+      <xs:attribute name="path" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+

@@ -12,8 +12,8 @@ namespace Silvtek.ORMEngine
 	/// </summary>
 	public class ActionFailedEventArgs : EventArgs
 	{
-       private Action action;
-       private string reason;
+       private readonly Action action;
+       private readonly string reason;
 
        /// <summary>
        /// Gets the <see cref="Action" /> that failed.

@@ -66,7 +66,7 @@ namespace Silvtek.ORMEngine.DataQuery
         {
             AggregateQueryParser parser = new AggregateQueryParser(this); 
             string sql = parser.GetSql();
-            Trace.WriteLine("Aggregate SQL:" + sql);
+            //Trace.WriteLine("Aggregate SQL:" + sql);
             return sql;
         }
 

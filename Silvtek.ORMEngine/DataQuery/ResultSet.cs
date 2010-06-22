@@ -73,6 +73,33 @@ namespace Silvtek.ORMEngine.DataQuery
           return (ResultRow)InnerList[index];
         }
 
+        public ResultRow[] GetRows(int startIndex, int count)
+        {
+            if (InnerList.Count == 0)return new ResultRow[0];
+            if (startIndex > InnerList.Count)return new ResultRow[0];
+
+            if (startIndex < 0) startIndex = 0;
+            if (count == -1) count = InnerList.Count;
+
+            int lastIndex = startIndex + count;
+            if (lastIndex  > (InnerList.Count - 1))
+            {
+                count = (InnerList.Count) - startIndex;
+                
+            }
+
+            ResultRow[] rangeArray = new ResultRow[count];
+
+            InnerList.CopyTo(startIndex, rangeArray, 0, count);
+
+            return rangeArray;
+        }
+
+        /// <summary>
+        /// Finds and object by a specified key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns><see ref="ResultRow" /></returns>
 		public ResultRow Find(object key)
 		{
 		   return (ResultRow)table[key];
@@ -128,6 +155,12 @@ namespace Silvtek.ORMEngine.DataQuery
 			return new ResultColumn(-1, type);
 		}
 
+        public ResultColumn GetColumn()
+        {
+            if (columns.Length == 0) return new ResultColumn(-1, typeof(object));
+            return columns[0];
+        }
+
         /// <summary>
         /// Gets the objects.
         /// </summary>
@@ -138,10 +171,36 @@ namespace Silvtek.ORMEngine.DataQuery
             return GetColumn(type).ToArray(type);
         }
 
+        public Array GetObjects(Type type, int startIndex, int count)
+        {
+            ResultColumn column = GetColumn(type);
+            return column.ToArray(type, startIndex, count);
+        }
 
+        /// <summary>
+        /// Gets the objects 
+        /// </summary>
+        /// <param name="columnIndex">Index of the column.</param>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="count">The count.</param>
+        /// <returns></returns>
+        public Array GetObjects(int columnIndex, int startIndex, int count)
+        {
+            ResultColumn column = GetColumn(columnIndex);
+            return column.ToArray(startIndex, count);
+        }
 
+        public Array GetObjects()
+        {
+            return GetColumn(0).ToArray();
+        }
 
-    #region -- Internal Methods --
+        public Array GetObjects(int startIndex, int count)
+        {
+            return GetObjects(0, startIndex, count);
+        }
+
+	    #region -- Internal Methods --
 
 		internal ResultSet(Type type, string propname, string identifier, string sql, int numOfCols)
 		{
@@ -199,7 +258,7 @@ namespace Silvtek.ORMEngine.DataQuery
              
              object key = MappedMember.GetMemberValue(obj);
 
-             Debug.WriteLine(String.Format("{0}.{1} = {2}",typeKey.FullName, propertyKey, key));
+            // Debug.WriteLine(String.Format("{0}.{1} = {2}",typeKey.FullName, propertyKey, key));
              table.Add(key, row);
            }
         }

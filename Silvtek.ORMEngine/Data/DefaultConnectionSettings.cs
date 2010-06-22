@@ -20,6 +20,7 @@ namespace Silvtek.ORMEngine.Data
         private readonly bool isDefault;
         private readonly int timeout;
         private readonly bool preparedStatements;
+        private readonly int commandTimeout;
         
 
         public override string ConnectionString
@@ -79,6 +80,11 @@ namespace Silvtek.ORMEngine.Data
             get { return preparedStatements; }
         }
 
+        public override int CommandTimeout
+        {
+            get { return commandTimeout; }
+        }
+
 
         internal DefaultConnectionSettings(XmlNode node)
         {
@@ -92,6 +98,9 @@ namespace Silvtek.ORMEngine.Data
 
             isDefault = Utility.GetAttributeValueAsBool(node, "default", false);
             timeout = Utility.GetAttributeValueAsInt32(node, "timeout", false);
+            commandTimeout = Utility.GetAttributeValueAsInt32(node, "commandTimeout", false);
+            if (commandTimeout == 0) commandTimeout = 90;
+
             preparedStatements = Utility.GetAttributeValueAsBool(node, "preparedStatements", false, false);
             connectionString = Utility.GetNodeValue(node, "connectionString");
 

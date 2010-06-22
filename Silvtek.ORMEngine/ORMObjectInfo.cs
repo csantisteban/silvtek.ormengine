@@ -1,4 +1,12 @@
+#region Copyright
+// Copyright (c) 2002-2014 Carlos Silva-Santisteban. All rights reserved.
+// See LICENSE in the repository root.
+#endregion
+
 using System;
+using System.Data;
+using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
@@ -7,6 +15,9 @@ using Silvtek.ORMEngine.Schema;
 
 namespace Silvtek.ORMEngine
 {
+    /// <summary>
+    /// Holds information about ORMObject
+    /// </summary>
     [Serializable]
     [SoapType("ORMObjectInfo")]
     public sealed class ORMObjectInfo : ISerializable
@@ -22,13 +33,24 @@ namespace Silvtek.ORMEngine
         private bool belongsTransaction;
         private bool isCopy;
         private string lastSql;
+      
 
+        /// <summary>
+        /// Gets a value indicating whether this instance is locked.
+        /// </summary>
+        /// <value><c>true</c> if this instance is locked; otherwise, <c>false</c>.</value>
         [SoapIgnore]
         public bool IsLocked
         {
             get { return isLocked; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance is read only.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance is read only; otherwise, <c>false</c>.
+        /// </value>
         [SoapIgnore]
         public bool IsReadOnly
         {
@@ -88,16 +110,25 @@ namespace Silvtek.ORMEngine
             get { return schema; }
         }
 
+        /// <summary>
+        /// Gets the mapped members.
+        /// </summary>
+        /// <value>The mapped members.</value>
         internal MapMemberList MappedMembers
         {
             get { return schema.MappedMembers; }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether [belongs transaction].
+        /// </summary>
+        /// <value><c>true</c> if [belongs transaction]; otherwise, <c>false</c>.</value>
         internal bool BelongsTransaction
         {
             get { return belongsTransaction; }
             set { belongsTransaction = value; }
         }
+
 
         internal ORMObjectInfo(Type type)
         {
@@ -121,6 +152,9 @@ namespace Silvtek.ORMEngine
             isReadOnly = true;
         }
 
+        /// <summary>
+        /// Isolateds this instance. An isolated object will not listen or broadcast updates
+        /// </summary>
         public void Isolated()
         {
             isIsolated = true;
@@ -136,20 +170,18 @@ namespace Silvtek.ORMEngine
             isDirty = false;
         }
 
-        
-
         #region -- Get Insert Statement --
 
         /// <summary>
         /// Returns a prepared sql statement for the insert.
         /// </summary>
         /// <param name="source">The source object from which the value will be read and insert</param>
-        //internal string GetInsertStatement(object source)
-        //{
-        //    if (schema.MappedMembers.HasSequentialMember) LoadSequentialMembers(source);
-        //    lastSql = Schema.SqlBuilder.GetInsertStatement(source);
-        //    return lastSql;
-        //}
+        internal string GetInsertStatement(object source)
+        {
+            if (schema.MappedMembers.HasSequentialMember) LoadSequentialMembers(source);
+            lastSql = Schema.SqlBuilder.GetInsertStatement(source);
+            return lastSql;
+        }
 
         internal string GetSelectStatement(object source)
         {
@@ -163,29 +195,55 @@ namespace Silvtek.ORMEngine
             return lastSql;
         }
 
-        //internal string GetUpdateStatement(MemberFieldList fields, object source)
-        //{           
-        //    lastSql = Schema.SqlBuilder.GetUpdateStatement(fields, source);
-        //    return lastSql;
-        //}
+        internal string GetUpdateStatement(MemberFieldList fields, object source)
+        {
+            lastSql = Schema.SqlBuilder.GetUpdateStatement(fields, source);
+            return lastSql;
+        }
 
         internal Command GetInsertCommand(Connection cnn, object source)
         {
             if (schema.MappedMembers.HasSequentialMember) LoadSequentialMembers(source);
-            Command cmd = Schema.SqlBuilder.GetInsertCommand(cnn, source);
-            lastSql = cmd.CommandText;
-            return cmd;
+
+            if (cnn.Settings.PreparedStatement || this.MappedMembers.HasBinaryMember)
+            {
+                Command cmd = Schema.SqlBuilder.GetInsertCommand(cnn, source);
+                lastSql = cmd.CommandText;
+                return cmd;
+            }
+            else
+            {
+                Command cmd = new Command(cnn);
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = GetInsertStatement(source);
+
+                return cmd;
+            }
         }
 
         internal Command GetUpdateCommand(Connection cnn, MemberFieldList fields, object source)
         {
-            Command cmd = Schema.SqlBuilder.GetUpdateCommand(cnn, fields, source);
-            if (cmd != null)
+            if (cnn.Settings.PreparedStatement || this.MappedMembers.HasBinaryMember)
             {
-                lastSql = cmd.CommandText;
+                Command cmd = Schema.SqlBuilder.GetUpdateCommand(cnn, fields, source);
+                if (cmd != null)
+                {
+                    lastSql = cmd.CommandText;
+                }
+
+                return cmd;
+            }
+            else
+            {
+                lastSql =  GetUpdateStatement(fields, source);
+
+                if (lastSql == null || lastSql.Length == 0) return null;
+                Command cmd = new Command(cnn);
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = lastSql;
+                return cmd;
             }
 
-            return cmd;
         }
 
         /// <summary>
@@ -238,20 +296,33 @@ namespace Silvtek.ORMEngine
 
         internal string CreateIdentifierString(object source)
         {
-            StringBuilder sbuilder = new StringBuilder(400);
+            //StringBuilder sbuilder = new StringBuilder(1000);
 
-            sbuilder.Append(source.GetType().FullName + "->");
-
-            MapMember[] pks = schema.MappedMembers.GetAllPrimaryKeyMembers();
-            for (int i = 0; i < pks.Length; i++)
+            byte[] identifier;
+            using (MemoryStream stream = new MemoryStream())
             {
+                byte[] objectName = Utility.ConverToBytes(source.GetType().FullName);
+                stream.Write(objectName, 0, objectName.Length);
 
-                sbuilder.Append("[" + pks[i].ColumnName + ":");
-                sbuilder.Append(Convert.ToString( pks[i].GetMemberValue(source)).ToLower() + "]");
-                
+                MapMember[] pks = schema.MappedMembers.GetAllPrimaryKeyMembers();
+
+                for (int i = 0; i < pks.Length; i++)
+                {
+                    byte[] bytes = Utility.ConverToBytes(pks[i].GetMemberValue(source));
+                    stream.Write(bytes, 0, bytes.Length);
+                }
+
+                stream.Position = 0;
+                identifier = stream.ToArray();
+                stream.Close();
             }
 
-            return sbuilder.ToString();
+            SHA1 sha1 = new SHA1CryptoServiceProvider();
+            byte[] result = sha1.ComputeHash(identifier);
+            string hex = Utility.BytesToHex(result);
+            if (hex.Length < 2) return String.Empty;
+
+            return hex;
         }
 
 

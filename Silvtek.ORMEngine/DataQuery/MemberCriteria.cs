@@ -124,6 +124,11 @@ namespace Silvtek.ORMEngine.DataQuery
             parser = CriteriaParser.Create(type, memberName, Comparison.NotIn, query);
         }
 
+        public void ContainsIn(QueryBase query)
+        {
+            parser = CriteriaParser.Create(type, memberName, Comparison.In, query);
+        }
+
         public void NotContainsIn(QueryBase query)
         {
             parser = CriteriaParser.Create(type, memberName, Comparison.NotIn, query);

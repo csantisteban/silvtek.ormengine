@@ -66,6 +66,7 @@ namespace Silvtek.ORMEngine.Data
 	    {
 		}
 
+
 		/// <summary>
 		/// Constructor.
 		/// </summary>
@@ -82,12 +83,17 @@ namespace Silvtek.ORMEngine.Data
                throw new DbDataException(e);
             }
 
-			CommandText = cmdText;
+            if (cmdText != null && cmdText.Length > 0)
+            {
+                CommandText = cmdText;
+            }
+
 		    type = cnn.ProviderType;
 	        dbtype = cnn.DbTypeFormatter;
             settings = cnn.Settings;
             executionTime = TimeSpan.Zero;
             currentConnection = cnn;
+		    this.CommandTimeout = cnn.CommandTimeout;
        
 		}
 

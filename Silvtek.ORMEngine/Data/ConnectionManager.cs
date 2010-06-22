@@ -56,30 +56,34 @@ namespace Silvtek.ORMEngine.Data
 
 		#region -- RegisterConnection Methods --
 
-		/// <summary>
-		/// Register connection information.
-		/// </summary>
-		/// <param name="name">The connection name.</param>
-		/// <param name="connectionString">The connection string.</param>
-		/// <param name="provider">The database provider</param>
-		/// <param name="dbtype">The database type.</param>
-		/// <param name="timeout">The timeout for a connection</param>
-		/// <remarks>
-		/// <note>If a connection name already exits will be overwritten.
-		/// Registering a connection programmatically.
-		/// <example>
-		///   <code>
-		///      string connectionString = "[connection-string]";
-		///      MSSqlProvider provider = MSSqlProvider();
-		///      MSSqlType dbType = MSSqlType();
-		///      ConnectionManager.Current.RegisterConnection("Sample", connectionString, , dbType, 40);
-		///   </code>
-		///  </example>
-		/// </note>
-		/// </remarks>
+
+        /// <summary>
+        /// Registers the connection.
+        /// </summary>
+        /// <param name="settings">The settings.</param>
+		public void RegisterConnection(ConnectionSettings settings)
+		{
+            connectionInformationList.Add(settings);
+		}
+
+
+        /// <summary>
+        /// Registers the connection.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <param name="provider">The provider.</param>
+        /// <param name="dbtype">The dbtype.</param>
+        /// <param name="timeout">The timeout.</param>
 		public void RegisterConnection(string name, string connectionString, ConnectionProvider provider, DbTypeFormatter dbtype, int timeout)
 		{
-            connectionInformationList.Add(name, connectionString, provider, dbtype, timeout, false);
+            ConnectionSettings settings = new ConnectionSettings();
+            settings.ConnectionName = name;
+            settings.ConnectionString = connectionString;
+            settings.ConnectionProvider = provider;
+            settings.DbTypeFormatter = dbtype;
+		    settings.Timeout = timeout;
+            RegisterConnection(settings);
 		}
 
         /// <summary>
@@ -106,7 +110,14 @@ namespace Silvtek.ORMEngine.Data
         /// </remarks>
         public void RegisterConnection(string name, string connectionString, ConnectionProvider provider, DbTypeFormatter dbtype, int timeout, bool prepareStatements)
         {
-            connectionInformationList.Add(name, connectionString, provider, dbtype, timeout, prepareStatements);
+            ConnectionSettings settings = new ConnectionSettings();
+            settings.ConnectionName = name;
+            settings.ConnectionString = connectionString;
+            settings.ConnectionProvider = provider;
+            settings.DbTypeFormatter = dbtype;
+            settings.Timeout = timeout;
+            settings.PreparedStatements = prepareStatements;
+            RegisterConnection(settings);
         }
 		
 		/// <summary>
@@ -121,7 +132,12 @@ namespace Silvtek.ORMEngine.Data
 		/// </remarks>
 		public void RegisterConnection(string name, string connectionString, ConnectionProvider provider, DbTypeFormatter dbtype)
 		{
-			RegisterConnection(name, connectionString, provider, dbtype, -1);
+            ConnectionSettings settings = new ConnectionSettings();
+		    settings.ConnectionName = name;
+		    settings.ConnectionString = connectionString;
+		    settings.ConnectionProvider = provider;
+		    settings.DbTypeFormatter = dbtype;
+            RegisterConnection(settings);
 		}
 				
 		#endregion
@@ -301,8 +317,10 @@ namespace Silvtek.ORMEngine.Data
                         {
                             con.Settings.Stats.IncrementClosedByForce();
 
-                            string traceMsg = Utility.GetResourceString("TRACE:CON_FORCED_TO_CLOSE", con.ID, con.OpenTime, lastExec);
-                            Trace.WriteLine(traceMsg, Resources.TRACE_CATEGORY);
+                            //string traceMsg = Utility.GetResourceString("TRACE:CON_FORCED_TO_CLOSE", con.ID, con.OpenTime, lastExec);
+                            //Trace.WriteLine(traceMsg, Resources.TRACE_CATEGORY);
+                            
+                            //todo: call windows event.
                             con.Close();
                         }
                     }

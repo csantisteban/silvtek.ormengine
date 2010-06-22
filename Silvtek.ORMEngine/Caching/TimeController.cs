@@ -11,17 +11,17 @@ namespace Silvtek.ORMEngine.Caching
 	/// <summary>
 	/// REpresents a cache time controller
 	/// </summary>
-	internal struct  TimeController
+	public struct  TimeController
 	{
 
 		private DateTime expirationTime;
-		private TimeSpan timeSpan;
-		private bool slideTime;
+		private readonly TimeSpan time;
+		private readonly bool isSlideTime;
 
         /// <summary>
         /// Gets the expiration date and time.
         /// </summary>
-		internal DateTime ExpirationTime
+        public DateTime ExpirationTime
 		{
 			get {return expirationTime;}
 		}
@@ -29,28 +29,28 @@ namespace Silvtek.ORMEngine.Caching
         /// <summary>
         /// Gets the duration
         /// </summary>
-		internal TimeSpan Duration
+        public TimeSpan Duration
 		{
-			get {return timeSpan;}
+			get {return time;}
 		}
 
         /// <summary>
         /// Gets whether the time is slide time or absolute.
         /// </summary>
-		internal bool HasSlideTime
+        public bool HasSlideTime
 		{
-			get {return slideTime;}
+			get {return isSlideTime;}
 		}
 
         /// <summary>
         /// Creates a time controller with absolute expiration time.
         /// </summary>
         /// <param name="expirationTime"></param>
-		internal TimeController(DateTime expirationTime)
+        public TimeController(DateTime expirationTime)
 		{
 			this.expirationTime = expirationTime;
-			timeSpan = TimeSpan.MinValue;
-			slideTime = false;
+			time = TimeSpan.MinValue;
+			isSlideTime = false;
 		}
 
         /// <summary>
@@ -58,11 +58,11 @@ namespace Silvtek.ORMEngine.Caching
         /// </summary>
         /// <param name="ts">Duration time</param>
         /// <param name="slideTime">Whether is slite time or absolute</param>
-		internal TimeController(TimeSpan ts, bool slideTime)
+        public TimeController(TimeSpan ts, bool slideTime)
 		{
 			this.expirationTime = DateTime.Now.Add(ts);
-			this.timeSpan = ts;
-			this.slideTime = slideTime;
+			this.time = ts;
+			this.isSlideTime = slideTime;
 		}
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace Silvtek.ORMEngine.Caching
 
 		internal void SlideTime()
 		{
-			if (slideTime && timeSpan > TimeSpan.MinValue)expirationTime = DateTime.Now.Add(timeSpan);
+			if (isSlideTime && time > TimeSpan.MinValue)expirationTime = DateTime.Now.Add(time);
 		}
 
 
@@ -93,7 +93,7 @@ namespace Silvtek.ORMEngine.Caching
 			return inactiveController;
 		}
 
-		private static TimeController GetDefault()
+        public static TimeController GetDefault()
 		{
 			TimeSpan timespan = new TimeSpan(0, 0, 0, 0, ORMConfigurator.QueryCacheTimeMs);
 			TimeController defaultController= new TimeController(timespan, false);

@@ -3,7 +3,9 @@ using System.Diagnostics;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Reflection;
+using System.Text;
 using Silvtek.ORMEngine.Compression;
+using Silvtek.ORMEngine.Configs;
 using Silvtek.ORMEngine.Encryption;
 
 namespace Silvtek.ORMEngine.Schema
@@ -18,7 +20,7 @@ namespace Silvtek.ORMEngine.Schema
         private readonly MapMemberList memberlist;
        // private readonly AliasMaps aliasMaps;
 
-        private Type type;
+        private readonly Type type;
         private bool isValid;
         private bool isCacheDisabled;
 
@@ -156,12 +158,10 @@ namespace Silvtek.ORMEngine.Schema
             // Process MSSequence Attribute. This attribute marks a member as Microsoft Sql Server sequence.
             DatabaseIdentityAttribute[] databaseIdentityAttributes = (DatabaseIdentityAttribute[])memberinfo.GetCustomAttributes(typeof(DatabaseIdentityAttribute), true);
 
-
             ColumnAttribute column = columnAttribute[0];
 
-
             MapMemberProperties properties = new MapMemberProperties();
-            properties.ModeType = column.ModeType;
+            properties.SetColumnModeType(column.ModeType);
 
             if (column.DataType == DataType.Object)
             {
@@ -181,6 +181,7 @@ namespace Silvtek.ORMEngine.Schema
 
             properties.SetDataType(memberinfo, column.DataType);
 
+            memberlist.Alias.Add(column.Name, memberinfo.Name);
             if (aliasAttributes.Length > 0)
             {
                 foreach (AliasAttribute alias in aliasAttributes)
@@ -220,6 +221,14 @@ namespace Silvtek.ORMEngine.Schema
             properties.SetColumnName(column.Name);
             properties.SetFileExtension(column.FileExtension);
 
+            if (column.Encoding == null || column.Encoding == Encoding.Default)
+            {
+                properties.SetEncoding(ORMConfigurator.DefaultEncoding);
+            }
+            else
+            {
+                properties.SetEncoding(column.Encoding);
+            }
 
             if (secAttributes.Length > 0)
             {

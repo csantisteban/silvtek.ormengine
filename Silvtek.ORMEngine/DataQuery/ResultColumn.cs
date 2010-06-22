@@ -9,7 +9,8 @@ using System.Collections;
 namespace Silvtek.ORMEngine.DataQuery
 {
 	/// <summary>
-	/// Summary description for ResultRowCollection.
+	/// Represents a collection of instances retrieved from the database. These instance
+	/// must be ORM Objects.
 	/// </summary>
 	public class ResultColumn : CollectionBase
 	{
@@ -19,17 +20,29 @@ namespace Silvtek.ORMEngine.DataQuery
 		private bool hasType;
 
 
+        /// <summary>
+        /// Gets the index of the column.
+        /// </summary>
+        /// <value>The index of the column.</value>
 		public int ColumnIndex
 		{
 			get {return columnIndex;}
 		}
 
+        /// <summary>
+        /// Gets the type that contains.
+        /// </summary>
+        /// <value>The type.</value>
 		public Type Type
 		{
 			get {return type;}
 		}
 
 
+        /// <summary>
+        /// Gets the <see cref="System.Object"/> at the specified index.
+        /// </summary>
+        /// <value></value>
 		public object this[int index]
 		{
 			get {return Get(index);}
@@ -98,22 +111,66 @@ namespace Silvtek.ORMEngine.DataQuery
             
 		}
 
+        /// <summary>
+        /// Results an array for the type provided.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="count">The count.</param>
+        /// <returns></returns>
+        public Array ToArray(Type type, int startIndex, int count)
+        {
+            if (InnerList.Count == 0) return Array.CreateInstance(type, 0);
+            if (startIndex > InnerList.Count) return Array.CreateInstance(type, 0);
+
+            if (startIndex < 0) startIndex = 0;
+            if (count == -1) count = InnerList.Count;
+
+            int lastIndex = startIndex + count;
+            if (lastIndex > (InnerList.Count - 1))
+            {
+                count = (InnerList.Count) - startIndex;
+
+            }
+
+            Array rangeArray = Array.CreateInstance(type, count);
+            InnerList.CopyTo(startIndex, rangeArray, 0, count);
+
+            return rangeArray;
+        }
+
+        /// <summary>
+        /// Results an array for the type provided.
+        /// </summary>
 		public Array ToArray(Type type)
 		{
-			if (InnerList.Count == 0)
+		    if (InnerList.Count == 0)
 			{
 				return Array.CreateInstance(type, 0);
 			}
-			else
-			{
-				return InnerList.ToArray(type);
-			}
+
+
+		    return InnerList.ToArray(type);
 		}
 
-		public Array ToArray()
+        /// <summary>
+        /// Results an array the type assigned to this instance.
+        /// </summary>
+	    public Array ToArray()
 		{
 			return ToArray(type);
 		}
+
+        /// <summary>
+        /// Results the array.
+        /// </summary>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="count">The count.</param>
+        /// <returns></returns>
+        public Array ToArray(int startIndex, int count)
+        {
+            return ToArray(type, startIndex, count);
+        }
 
 
 

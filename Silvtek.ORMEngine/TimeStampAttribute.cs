@@ -5,7 +5,7 @@ namespace Silvtek.ORMEngine
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = true)]
     public sealed class TimeStampAttribute  : ColumnAttribute
     {
-        private bool syncfield;
+        private readonly bool syncfield;
      
         public TimeStampAttribute(string name) : this(name, true)
         {

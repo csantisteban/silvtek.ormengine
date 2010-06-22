@@ -20,6 +20,7 @@ namespace Silvtek.ORMEngine.Data
         private readonly ConnectionStats stats;
         private int timeout;
         private bool preparedStatement;
+        private int commandTimeout;
 
         /// <summary>
         /// Gets the connections stadistics.
@@ -76,15 +77,22 @@ namespace Silvtek.ORMEngine.Data
             set { preparedStatement = value; }
         }
 
-
-        internal ConnectionInfo(string name, string connectionString, int timeout, ConnectionProvider provider, DbTypeFormatter dbtype)
+        public int CommandTimeout
         {
-            this.name = name;
-            cnnString = connectionString;
-            this.timeout = timeout;
-            this.dbtype = dbtype;
-            this.provider = provider;
+            get { return commandTimeout; }
+            set { commandTimeout = value; }
+        }
+
+
+        internal ConnectionInfo(ConnectionSettings settings)
+        {
+            this.name = settings.ConnectionName;
+            cnnString = settings.ConnectionString;
+            this.timeout = settings.Timeout;
+            this.dbtype = settings.DbTypeFormatter;
+            this.provider = settings.ConnectionProvider;
             preparedStatement = false;
+            this.commandTimeout = commandTimeout;
             stats = new ConnectionStats();
 
         }
@@ -98,6 +106,7 @@ namespace Silvtek.ORMEngine.Data
             cnnString = settingsBase.ConnectionString;
             name = settingsBase.ConnectionName;
             preparedStatement = settingsBase.PreparedStatements;
+            commandTimeout = settingsBase.CommandTimeout;
             stats = new ConnectionStats();
         }
 

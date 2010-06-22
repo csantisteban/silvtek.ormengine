@@ -652,7 +652,7 @@ namespace Silvtek.ORMEngine.Data
   		   object obj;
            try
            {
-             Trace.Assert((reader != null), "DataReader is null");
+             //Trace.Assert((reader != null), "DataReader is null");
              obj = reader.GetValue(i);
            }
            catch(IndexOutOfRangeException)

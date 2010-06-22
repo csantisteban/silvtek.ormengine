@@ -13,10 +13,14 @@
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>
-    <SccProjectName>Silvtek ORM Engine:%24/1.7/Silvtek.ORMEngine v1.7/Silvtek.ORMEngine</SccProjectName>
-    <SccLocalPath>.</SccLocalPath>
-    <SccAuxPath>100170</SccAuxPath>
-    <SccProvider>Dynamsoft SCM Anywhere Hosted:{2db9c764-2000-41D1-A6C3-704E6C1A3DE2}</SccProvider>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -81,9 +85,14 @@
     <Compile Include="Configs\ORMConfigurator.cs" />
     <Compile Include="DataQuery\Parsers\SingleValueQueryParser.cs" />
     <Compile Include="DataQuery\SingleValueQuery.cs" />
+    <Compile Include="DataQuery\SPObjectQuery.cs" />
+    <Compile Include="DataQuery\SPQuery.cs" />
+    <Compile Include="Data\ConnectionSettings.cs" />
     <Compile Include="DigestValidationResult.cs" />
     <Compile Include="Encryption\DefaultRecordDigestProvider.cs" />
     <Compile Include="Encryption\RecordDigestProvider.cs" />
+    <Compile Include="ExecuteBatchMode.cs" />
+    <Compile Include="InternalAfterOperationDelegate.cs" />
     <Compile Include="MemberAttributes.cs" />
     <Compile Include="ObjectFormatterProviderAttribute.cs" />
     <Compile Include="Data\ConnectionInfoList.cs" />
@@ -106,37 +115,22 @@
     <Compile Include="ObjectPooling\Pool.cs" />
     <Compile Include="ObjectPooling\PoolContext.cs" />
     <Compile Include="ObjectPooling\PoolManager.cs" />
+    <Compile Include="ORMBatch.cs" />
     <Compile Include="ORMDefaults.cs" />
     <Compile Include="ORMEventArgs.cs" />
     <Compile Include="ORMNull.cs" />
     <Compile Include="ORMObjectProxy.cs" />
-    <Compile Include="ORMService.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ORMServiceController.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ORMServiceParameterInfo.cs" />
-    <Compile Include="ORMServiceParameterInfoCollection.cs" />
-    <Compile Include="ORMServiceResult.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="ORMSerializer.cs" />
     <Compile Include="DataStream.cs" />
     <Compile Include="PreserveAttribute.cs" />
-    <Compile Include="QueryProxy.cs" />
-    <Compile Include="DataSourceType.cs" />
     <Compile Include="Data\ConnectionSettingsBase.cs" />
     <Compile Include="Data\DefaultConnectionSettings.cs" />
     <Compile Include="GlobalConstants.cs" />
-    <Compile Include="ORMDiagnostics.cs" />
     <Compile Include="ORMObjectInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BindingStatus.cs" />
     <Compile Include="Caching\CacheItem.cs" />
     <Compile Include="Caching\CacheItemList.cs" />
-    <Compile Include="Caching\CacheItemRemovalReason.cs" />
-    <Compile Include="Caching\CacheItemRemoveCallback.cs" />
     <Compile Include="Caching\GlobalReferencesManager.cs" />
     <Compile Include="Caching\ORMReferencesManager.cs" />
     <Compile Include="Caching\QueryCache.cs" />
@@ -190,7 +184,6 @@
     <Compile Include="EnumConversionType.cs" />
     <Compile Include="DbTypeFormatter.cs" />
     <Compile Include="LockORMException.cs" />
-    <Compile Include="MSSqlIdentityAttribute.cs" />
     <Compile Include="MSSql\MSSqlColumnSchema.cs" />
     <Compile Include="MSSql\MSSqlProvider.cs" />
     <Compile Include="MSSql\MSSqlTableSchema.cs" />
@@ -265,10 +258,8 @@
     <Compile Include="SequenceProvider.cs" />
     <Compile Include="TableAttribute.cs" />
     <Compile Include="Transaction.cs" />
-    <Compile Include="TypeCollection.cs" />
     <Compile Include="UniqueAttribute.cs" />
     <Compile Include="Utility.cs" />
-    <Compile Include="XmlSerializerUtil.cs" />
     <Compile Include="Xml\ORMServiceResult.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -284,11 +275,12 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="_prj.buildsupport\build.xml" />
     <Content Include="_prj.buildsupport\buildnumber.txt" />
     <Content Include="_prj.buildsupport\assemblyversion.net-1.1.txt" />
     <Content Include="_prj.buildsupport\assemblyversion.net-2.0.txt" />
-    <Content Include="Documentation\main.html" />
-    <Content Include="Documentation\TextFile1.txt" />
+    <Content Include="_prj.documents\main.html" />
+    <Content Include="_prj.documents\TextFile1.txt" />
     <Content Include="FileHeader.txt" />
     <Content Include="Schema\Documentation\MappedMemberProperties.cs.xml" />
     <Content Include="XmlMapping\Documentation\SampleTwo.xml" />
@@ -296,18 +288,21 @@
     <Content Include="XmlMapping\Documentation\XmlSchema 1.0.xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Configs\Documentation\Connections.config" />
+    <None Include="_prj.buildsupport\build.bat" />
+    <None Include="_prj.documentation\Connections.config" />
     <None Include="XmlMapping\Documentation\ORM-Mapping-Schema.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="XmlMapping\Documentation\ORM-Mapping-Schema.xsx">
       <DependentUpon>ORM-Mapping-Schema.xsd</DependentUpon>
     </None>
+    <None Include="_prj.documentation\connections.config.schema.xsd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DataQuery\Parsers\NUnitTesters\" />
     <Folder Include="Oracle\" />
-    <Folder Include="_prj.documents\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

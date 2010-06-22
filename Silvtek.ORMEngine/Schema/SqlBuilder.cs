@@ -87,143 +87,160 @@ namespace Silvtek.ORMEngine.Schema
             return select.ToString();
         }
 
-        //internal string GetInsertStatement(object source)
-        //{
-        //    StringBuilder tmpColumnValues = new StringBuilder(1000);
-        //    int size = mappedMembers.Count;
-        //    for (int i = 0; i < size; i++)
-        //    {
-        //        // is is SQLServer sequential do not add to the insert statement;
-        //        if (mappedMembers[i].Properties.UseDatabaseIdentity)
-        //        {
-        //            databaseIdentityColumnIndex = i;
-        //            continue;
-        //        }
+        internal string GetInsertStatement(object source)
+        {
+            StringBuilder tmpColumnValues = new StringBuilder(1000);
+            StringBuilder tmpColumnNames = new StringBuilder(1000);
 
-        //        // Get value from the source object.    
-        //        object val = mappedMembers[i].GetValue(source);
+            int size = mappedMembers.Count;
+            for (int i = 0; i < size; i++)
+            {
+                // is is SQLServer sequential do not add to the insert statement;
+                if (mappedMembers[i].Properties.UseDatabaseIdentity)
+                {
+                    databaseIdentityColumnIndex = i;
+                    continue;
+                }
 
-        //        // Check if the primary key member has a value, if not throw error.
-        //        if (mappedMembers[i].Properties.IsPrimaryKey && val == null)
-        //        {
-        //            string exMsg = Utility.GetResourceString("RES_PKIsNullOnInsert", mappedMembers[i].MemberName);
-        //            throw new ORMException(exMsg);
-        //        }
-        //        else if ((!mappedMembers[i].Properties.AcceptNulls && val == null) ||
-        //                 (!mappedMembers[i].Properties.AcceptNulls && val != null && mappedMembers[i].Properties.DataType == DataType.String && ((string) val).Length == 0)
-        //            )
-        //        {
-        //            if (mappedMembers[i].Properties.DefaultValue == null)
-        //            {
-        //                string typeFullName = source.GetType().FullName;
-        //                string propertyName = mappedMembers[i].MemberName;
-        //                string excMsg = Utility.GetResourceString("EXCEPTION:PROP_IS_NULL", propertyName, typeFullName, val);
-
-        //                throw new ORMException(excMsg);
-        //            }
-        //            else
-        //            {
-        //                val = mappedMembers[i].Properties.DefaultValue;
-        //            }
-        //        }
-
-        //        // Here we set the values.
-        //        if (mappedMembers[i].Properties.DataType == DataType.String && val != null)
-        //        {
-        //            string tmp_val = Convert.ToString(val);
-
-        //            // Throw an error if the string excced the capacity.
-        //            if (tmp_val.Length > mappedMembers[i].Properties.Length)
-        //            {
-        //                string exMsg = Utility.GetResourceString("SQL:VALUE_SET_EXCEEDS_CAPACITY", source.GetType().FullName, mappedMembers[i].MemberName, mappedMembers[i].Properties.Length, tmp_val);
-        //                throw new ORMException(exMsg);
-        //            }
-        //        }
-
-        //        string tmpValue = MapUtility.FormatValueAsString(mappedMembers[i], val, true);
-        //        tmpColumnValues.Append(tmpValue);
-
-        //        if (i < size - 1) tmpColumnValues.Append(", ");
-        //    }
-
-        //    StringBuffer insert = new StringBuffer(INSERT_SQL, 1000);
-        //    insert.SetTokenValue("table", tableName);
-        //    insert.SetTokenValue("columns", insertColumns);
-        //    insert.SetTokenValue("values", tmpColumnValues.ToString());
-        //    return insert.ToString();
-        //}
-
-        //internal string GetUpdateStatement(MemberFieldList fields, object source)
-        //{
-        //    const string criteriaTemplate = "{comma} {column} = {value}";
-        //    int columnsToUpdate = 0;
-
-        //    StringBuffer criteriaBuff = new StringBuffer(criteriaTemplate);
-        //    StringBuilder criteria = new StringBuilder();
-        //    criteriaBuff.SetTokenValue("comma", "");
-
-        //    // Count in how many column the value has been changed.
-        //    for (int i = 0; i < mappedMembers.Count; i++)
-        //    {
-        //        MapMember col = mappedMembers[i];
-        //        //bool hasFieldChanged = true;
-        //        if (col.Properties.IsPrimaryKey) continue;
-
-        //        MemberField field = fields[col.MemberName];
-        //        if (!field.Changed) continue;
-
-        //        criteriaBuff.SetTokenValue("column", col.ColumnFullName);
-        //        object val = col.GetValue(source);
-
-        //        if ((!col.Properties.AcceptNulls && val == null) ||
-        //            (!col.Properties.AcceptNulls && val != null && col.Properties.DataType == DataType.String && ((string) val).Length == 0)
-        //            )
-        //        {
-        //            if (col.Properties.DefaultValue == null)
-        //            {
-        //                string typeFullName = source.GetType().FullName;
-        //                string propertyName = col.MemberName;
-        //                string excMsg = Utility.GetResourceString("EXCEPTION:PROP_IS_NULL", propertyName, typeFullName, val);
-
-        //                throw new ORMException(excMsg);
-        //            }
-        //            else
-        //            {
-        //                val = col.Properties.DefaultValue;
-        //            }
-        //        }
-
-        //        if (col.Properties.DataType == DataType.String && val != null)
-        //        {
-        //            string tmpValue = Convert.ToString(val);
-
-        //            // Truncate value if is too long.
-        //            if (tmpValue.Length > col.Properties.Length)
-        //            {
-        //                val = tmpValue.Substring(0, col.Properties.Length);
-        //                col.SetValue(source, val);
-        //            }
-        //        }
-
-        //        columnsToUpdate++;
-
-        //        string memberValue = MapUtility.FormatValueAsString(col, val, true);
-        //        criteriaBuff.SetTokenValue("value", memberValue);
-
-        //        criteria.Append(criteriaBuff.ToString());
+                bool isTimestamp = mappedMembers[i].Properties.ContainsAttribute(MemberAttributes.Timestamp);
+                object originalValue = mappedMembers[i].GetDataSourceValue(source);
 
 
-        //        criteriaBuff.SetTokenValue("comma", ",");
-        //    }
+                if (originalValue == null && mappedMembers[i].Properties.AcceptNulls) continue;
 
-        //    StringBuffer update = new StringBuffer(UPDATE_SQL, 1000);
-        //    update.SetTokenValue("table", tableName);
-        //    update.SetTokenValue("columnvalue", criteria.ToString());
-        //    update.SetTokenValue("criteria", GetPKValueList(source));
+                if (i > 0 && (databaseIdentityColumnIndex + 1 != i || databaseIdentityColumnIndex > 0))
+                {
+                    tmpColumnNames.Append(", ");
+                    tmpColumnValues.Append(", ");
+                }
 
-        //    string updateStmt = (columnsToUpdate > 0) ? update.ToString() : String.Empty;
-        //    return updateStmt;
-        //}
+                if (isTimestamp)
+                {
+                    if (mappedMembers[i].Properties.ContainsAttribute(MemberAttributes.SyncField))
+                    {
+                        originalValue = ORM.GetServerDateTime(source.GetType());
+                        mappedMembers[i].SetDataSourceValue(source, originalValue);
+                    }
+                    else
+                    {
+                        tmpColumnValues.Append(mappedMembers[i].Formatter.GetNowCommand());
+                        tmpColumnNames.Append(mappedMembers[i].ColumnName);
+                        continue;
+                    }
+                }
+
+                // Get value from the source object.    
+                string formattedValue = MapUtility.FormatValueAsString(mappedMembers[i], originalValue, true);
+
+                // Check if the primary key member has a value, if not throw error.
+                if (mappedMembers[i].Properties.IsPrimaryKey && originalValue == null)
+                {
+                    string exMsg = Utility.GetResourceString("RES_PKIsNullOnInsert", mappedMembers[i].MemberName);
+                    throw new ORMException(exMsg);
+                }
+
+
+                //// Here we set the values.
+                //if (mappedMembers[i].Properties.DataType == DataType.String && originalValue != null)
+                //{
+
+                //    // Throw an error if the string excced the capacity.
+                //    if (formattedValue.Length > mappedMembers[i].Properties.Length)
+                //    {
+                //        string exMsg = Utility.GetResourceString("SQL:VALUE_SET_EXCEEDS_CAPACITY", source.GetType().FullName, mappedMembers[i].MemberName, mappedMembers[i].Properties.Length, formattedValue);
+                //        throw new ORMException(exMsg);
+                //    }
+                //}
+
+                tmpColumnNames.Append(mappedMembers[i].ColumnName);
+                tmpColumnValues.Append(formattedValue);
+
+               // if (i < size - 1) tmpColumnValues.Append(", ");
+            }
+
+            StringBuffer insert = new StringBuffer(INSERT_SQL, 1000);
+            insert.SetTokenValue("table", tableName);
+            insert.SetTokenValue("columns", tmpColumnNames.ToString());
+            insert.SetTokenValue("values", tmpColumnValues.ToString());
+            return insert.ToString();
+        }
+
+        internal string GetUpdateStatement(MemberFieldList fields, object source)
+        {
+            const string criteriaTemplate = "{comma} {column} = {value}";
+            int columnsToUpdate = 0;
+
+            StringBuffer criteriaBuffer = new StringBuffer(criteriaTemplate);
+            StringBuilder criteria = new StringBuilder();
+            criteriaBuffer.SetTokenValue("comma", "");
+
+            // Count in how many column the value has been changed.
+            for (int i = 0; i < mappedMembers.Count; i++)
+            {
+                MapMember mapMember = mappedMembers[i];
+                //bool hasFieldChanged = true;
+                if (mapMember.Properties.IsPrimaryKey) continue;
+                if (mapMember.Properties.UseDatabaseIdentity) continue;
+
+                MemberField field = fields[mapMember.MemberName];
+                bool changed = (mapMember.Properties.DataType == DataType.Binary ||
+                                mapMember.Properties.DataType == DataType.Object);
+
+                if (!changed)
+                {
+                    changed = field.HasChanged || field.IncludeInUpdates;
+                }
+
+                if (!changed)
+                {
+#if DEBUG
+                    string msgdbg0 = String.Format("Field {0} not changed. Field Skipped. Value: {0}", field.ActualValue);
+                    Debug.WriteLine(msgdbg0);
+#endif
+                    continue;
+                }
+
+                columnsToUpdate++;
+                object originalValue = mappedMembers[i].GetDataSourceValue(source);
+
+                if (mappedMembers[i].Properties.ContainsAttribute(MemberAttributes.Timestamp))
+                {
+                    if (mappedMembers[i].Properties.ContainsAttribute(MemberAttributes.SyncField))
+                    {
+                        originalValue = ORM.GetServerDateTime(source.GetType());
+                        mappedMembers[i].SetDataSourceValue(source, originalValue);
+                    }
+                    else
+                    {
+                        criteriaBuffer.SetTokenValue("value", mappedMembers[i].Formatter.GetNowCommand());
+                        criteriaBuffer.SetTokenValue("column", mappedMembers[i].ColumnName);
+                        criteria.Append(criteriaBuffer.ToString());
+                        criteriaBuffer.SetTokenValue("comma", ",");
+                        continue;
+                    }
+                }
+
+
+                criteriaBuffer.SetTokenValue("column", mapMember.ColumnFullName);
+
+
+                string memberValue = MapUtility.FormatValueAsString(mapMember, originalValue, true);
+                criteriaBuffer.SetTokenValue("value", memberValue);
+
+                criteria.Append(criteriaBuffer.ToString());
+
+
+                criteriaBuffer.SetTokenValue("comma", ",");
+            }
+
+            StringBuffer update = new StringBuffer(UPDATE_SQL, 1000);
+            update.SetTokenValue("table", tableName);
+            update.SetTokenValue("columnvalue", criteria.ToString());
+            update.SetTokenValue("criteria", GetPKValueList(source));
+
+            string updateStmt = (columnsToUpdate > 0) ? update.ToString() : String.Empty;
+            return updateStmt;
+        }
 
         internal string GetDeleteStatement(object source)
         {
@@ -302,6 +319,16 @@ namespace Silvtek.ORMEngine.Schema
                 IDbDataParameter parameter = cmd.CreateParameter();
                 parameter.ParameterName = tmpValue;
                 parameter.Value = formattedValue;
+
+                parameter.DbType = mappedMembers[i].DbType;
+                if (mappedMembers[i].Properties.DataType == DataType.String)
+                {
+                    if (mappedMembers[i].Properties.Length > 0)
+                    {
+                        parameter.Size = mappedMembers[i].Properties.Length;
+                    }
+                }
+
                 cmd.Parameters.Add(parameter);
                 tmpColumnValues.Append(tmpValue);
                 tmpColumnNames.Append(mappedMembers[i].ColumnName);
@@ -339,6 +366,7 @@ namespace Silvtek.ORMEngine.Schema
 
 
                 if (mapMember.Properties.IsPrimaryKey) continue;
+                if (mapMember.Properties.UseDatabaseIdentity) continue;
 
 
                 MemberField field = fields[mapMember.MemberName];
@@ -391,6 +419,14 @@ namespace Silvtek.ORMEngine.Schema
                 IDbDataParameter parameter = cmd.CreateParameter();
                 parameter.ParameterName = memberValue;
                 parameter.Value = MapUtility.FormatValue(mapMember, originalValue, true);
+                parameter.DbType = mapMember.DbType;
+                if (mapMember.Properties.DataType == DataType.String)
+                {
+                    if (mapMember.Properties.Length > 0)
+                    {
+                        parameter.Size = mapMember.Properties.Length;
+                    }
+                }
 #if DEBUG
                 String dbgmsg = String.Format("[Update] Set {0} with value {1}", memberValue, parameter.Value);
                 Debug.WriteLine(dbgmsg);
@@ -455,6 +491,15 @@ namespace Silvtek.ORMEngine.Schema
                 IDbDataParameter parameter = cmd.CreateParameter();
                 parameter.ParameterName = parameterName;
                 parameter.Value = MapUtility.FormatValue(mappedMember, val, true);
+                parameter.DbType = mappedMember.DbType;
+                if (mappedMember.Properties.DataType == DataType.String)
+                {
+                    if (mappedMember.Properties.Length > 0)
+                    {
+                        parameter.Size = mappedMember.Properties.Length;
+                    }
+                }
+
                 cmd.Parameters.Add(parameter);
             }
 
