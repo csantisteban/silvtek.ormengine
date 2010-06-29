@@ -439,7 +439,7 @@ namespace Silvtek.ORMEngine.Configs
             if (node == null) return;
             queryCacheTimeMs = Utility.GetAttributeValueAsInt32(node, "milliseconds", false);
 
-            if (QueryCacheTimeMs == 0)
+            if (queryCacheTimeMs == 0)
             {
                 queryCacheTimeMs = 750;
             }

@@ -113,7 +113,7 @@
 
   <!-- handled the compilation of resources embedded in the project.-->
   <target name="_resources">
-    <resourcefileset id="build.resources" prefix="${assembly.name}" dynamicprefix="true">
+    <resourcefileset id="build.resources" prefix="Silvtek.ORMEngine" dynamicprefix="true">
       <include name="${source.path}\*.resx"/>
     </resourcefileset>
   </target>

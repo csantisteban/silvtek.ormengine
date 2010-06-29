@@ -289,7 +289,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="_prj.buildsupport\build.bat" />
-    <None Include="_prj.documentation\Connections.config" />
+    <None Include="_prj.documentation\Connections.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="XmlMapping\Documentation\ORM-Mapping-Schema.xsd">
       <SubType>Designer</SubType>
     </None>
