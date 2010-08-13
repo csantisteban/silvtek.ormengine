@@ -92,6 +92,7 @@
     <Compile Include="Encryption\DefaultRecordDigestProvider.cs" />
     <Compile Include="Encryption\RecordDigestProvider.cs" />
     <Compile Include="ExecuteBatchMode.cs" />
+    <Compile Include="IDataObject.cs" />
     <Compile Include="InternalAfterOperationDelegate.cs" />
     <Compile Include="MemberAttributes.cs" />
     <Compile Include="ObjectFormatterProviderAttribute.cs" />

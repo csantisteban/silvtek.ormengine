@@ -30,7 +30,7 @@ namespace Silvtek.ORMEngine
 	/// Represents an object mapped to a database table.
 	/// </summary>
     [Serializable]
-	public class ORMObject :  ICloneable, ISerializable
+    public class ORMObject : ICloneable, ISerializable, IDataObject
 	{
         // Holds the unique identifier string for this object.
         private string identifierstring;
