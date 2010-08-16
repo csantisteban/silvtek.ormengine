@@ -74,7 +74,7 @@ namespace Silvtek.ORMEngine
         ///<summary>
         /// Fired when the DataObject is changed in the datasource.
         ///</summary>
-        public event ORMEventHandler Changed;
+        public event ORMEventHandler Saved;
 
         ///<summary>
         /// Fired the record associated with current instance
@@ -448,11 +448,16 @@ namespace Silvtek.ORMEngine
 	        if (objectInfo.MappedMembers.HasDbIdentityMember || objectInfo.MappedMembers.HasTimeStamp)
 	        {
 	            FieldList.RefreshObjectSource();
+
+                if (!belongsTransaction) FireCreated();
 	            FieldList.CommitChanges();
 	        }
+	        else
+	        {
+                if (!belongsTransaction) FireCreated();
+	        }
 
-	        objectInfo.SetBindStatus(BindingStatus.Bound);
-	        if (!belongsTransaction) FireCreated();
+	        objectInfo.SetBindStatus(BindingStatus.Bound);      
 	        Bind(false);
 
 	        QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
@@ -925,10 +930,12 @@ namespace Silvtek.ORMEngine
 	            identifierstring = GetRecordIdentifier();
 	        }
 
+            if (!belongsTransaction) FireRemoved();
+
 	        objectInfo.SetBindStatus(BindingStatus.Removed);
 	        GlobalReferencesManager.Current.BroadcastRemoval(this);
 
-	        if (!belongsTransaction) FireRemoved();
+	       
                 
 	        //recordDigest = String.Empty;
 	        QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
@@ -1291,11 +1298,11 @@ namespace Silvtek.ORMEngine
 	            FieldList.RefreshObjectSource();
 	        }
 
+            if (!belongsTransaction) FireSaved();
+
 	        FieldList.CommitChanges();
 	        ORMReferencesManager manager = GlobalReferencesManager.Current.GetManagerInstance(GetRecordIdentifier());
 	        if (manager != null) manager.BroadcastUpdate(this);
-
-	        if (!belongsTransaction) FireChanged();
 
 	        QueryCache.Current.RemoveCacheForType(SourceObject.GetType());
 	        NotifyOperation(Action.Save);
@@ -1493,7 +1500,7 @@ namespace Silvtek.ORMEngine
 
        internal void InvokeChanged()
        {
-           FireChanged();
+           FireSaved();
            FireAfterSaved();
        }
 
@@ -1769,7 +1776,7 @@ namespace Silvtek.ORMEngine
         /// <summary>
         /// Invoked when this object has commited changes in the database (update statement).
         /// </summary>
-        protected virtual void OnChanged()
+        protected virtual void OnSaved()
         {
         }
 
@@ -1994,17 +2001,17 @@ namespace Silvtek.ORMEngine
         }
 
         /// <summary>
-        /// Fire the <see cref="Changed" /> event.
+        /// Fire the <see cref="Saved" /> event.
         /// </summary>
-        protected void FireChanged()
+        protected void FireSaved()
         {
 			if (!objectInfo.CancelEvents)
 			{
-				OnChanged();
-                if (Changed != null)
+				OnSaved();
+                if (Saved != null)
                 {
                     ORMEventArgs args = new ORMEventArgs(SourceObject);
-                    Changed(this, args);
+                    Saved(this, args);
                 }
 			}
         }

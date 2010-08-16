@@ -53,6 +53,7 @@ namespace Silvtek.ORMEngine
 
             XmlTextWriter writer = new XmlTextWriter(stream, Encoding.UTF8);
             writer.Formatting = Formatting.Indented;
+            
 
             writer.WriteStartDocument();
             writer.WriteStartElement("ORMObject");
@@ -61,13 +62,6 @@ namespace Silvtek.ORMEngine
             writer.WriteAttributeString("schema-version", "1.0");
             string dateTime = String.Format("{0:yyyy-MM-ddThh:mm:ss.fffff}", DateTime.Now);
             writer.WriteAttributeString("datetime", dateTime);
-            //writer.WriteStartElement("Comments");
-            //writer.WriteString("The XML representation of this ORM object is for troubleshooting and auditing purposes only. \n"+
-            //                   "A ORM Object cannot be reconstructed back from this XML, \n"+
-            //                   "For reconstructing the object that generated this xml, the Binary element is used, which contains a base64 representation "+
-            //                   "of this object.");
-
-            //writer.WriteEndElement();
 
             writer.WriteStartElement("ORMEngine");
             writer.WriteAttributeString("assembly", Assembly.GetExecutingAssembly().GetName().FullName);
@@ -93,6 +87,8 @@ namespace Silvtek.ORMEngine
                   writer.WriteAttributeString("primary-key", map.Properties.IsPrimaryKey.ToString());
                   writer.WriteAttributeString("length", map.Properties.Length.ToString());
                   writer.WriteAttributeString("allow-nulls", map.Properties.AcceptNulls.ToString());
+                  writer.WriteAttributeString("encrypted", map.Properties.IsEncryptionEnabled.ToString());
+                  writer.WriteAttributeString("mode", map.Properties.ModeType.ToString());
                   writer.WriteEndElement();
               }
               writer.WriteEndElement();
@@ -147,7 +143,7 @@ namespace Silvtek.ORMEngine
         /// </summary>
         /// <param name="obj">The obj.</param>
         /// <returns></returns>
-        private static byte[] Serialize(object obj)
+        public static byte[] Serialize(object obj)
         {
             if (obj == null)
             {
@@ -168,7 +164,7 @@ namespace Silvtek.ORMEngine
             return bytes;
         }
 
-        private static object Deserialize(byte[] bytes)
+        public static object Deserialize(byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)
             {
