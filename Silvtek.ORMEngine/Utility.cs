@@ -162,16 +162,28 @@ namespace Silvtek.ORMEngine
 
         internal static string BytesToHex(byte[] bytes)
         {
-            StringBuilder hexString = new StringBuilder(bytes.Length);
+            StringBuilder hexString = new StringBuilder(bytes.Length * 2);
             for (int i = 0; i < bytes.Length; i++)
             {
-                hexString.Append(bytes[i].ToString("X2"));
+                hexString.Append(bytes[i].ToString("x2"));
             }
 
             return hexString.ToString();
         }
 
-        internal static byte[] ConverToBytes(object value)
+        internal static byte[] ConvertHexToBytes(String hex)
+        {
+            int numberChars = hex.Length;
+            byte[] bytes = new byte[numberChars / 2];
+            for (int i = 0; i < numberChars; i += 2)
+            {
+                bytes[i/2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            }
+
+            return bytes;
+        }
+
+        internal static byte[] ConvertToBytes(object value)
         {
             SHA1 sha1 = new SHA1CryptoServiceProvider();
             byte[] sourceBytes = new byte[0];
