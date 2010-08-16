@@ -65,6 +65,22 @@ namespace Silvtek.ORMEngine
         /// </summary>
         public event ORMEventHandler AfterLoaded;
 
+        /// <summary>
+        /// Occurs when [created].
+        /// </summary>
+        public event ORMEventHandler Created;
+
+        /// <summary>
+        /// Occurs when [saved].
+        /// </summary>
+        public event ORMEventHandler Saved;
+
+
+        /// <summary>
+        /// Occurs when [removed].
+        /// </summary>
+        public event ORMEventHandler Removed;
+
         [NonSerialized]
         private bool synchronized;
 
@@ -125,6 +141,7 @@ namespace Silvtek.ORMEngine
             ormObject.ObjectInfo.CancelEvents = CancelEvents;
             ormObject.BeforeCreated += BeforeCreated;
             ormObject.AfterCreated += AfterCreated;
+            ormObject.Created += Created;
 
             if (Synchronized)
             {
@@ -152,6 +169,7 @@ namespace Silvtek.ORMEngine
             ormObject.ObjectInfo.CancelEvents = CancelEvents;
             ormObject.BeforeRemoved += BeforeRemoved;
             ormObject.AfterRemoved += AfterRemoved;
+            ormObject.Removed += Removed;
 
             if (Synchronized)
             {
@@ -193,6 +211,7 @@ namespace Silvtek.ORMEngine
             ormObject.ObjectInfo.CancelEvents = CancelEvents;
             ormObject.BeforeSaved += BeforeSaved;
             ormObject.AfterSaved += AfterSaved;
+            ormObject.Saved += Saved;
 
 
             bool load = (ormObject.ObjectInfo.BindingStatus != BindingStatus.Bound);
