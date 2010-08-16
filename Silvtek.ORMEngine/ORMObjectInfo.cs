@@ -7,9 +7,7 @@ using System;
 using System.Data;
 using System.IO;
 using System.Security.Cryptography;
-using System.Text;
 using System.Runtime.Serialization;
-using System.Xml.Serialization;
 using Silvtek.ORMEngine.Data;
 using Silvtek.ORMEngine.Schema;
 
@@ -19,7 +17,6 @@ namespace Silvtek.ORMEngine
     /// Holds information about ORMObject
     /// </summary>
     [Serializable]
-    [SoapType("ORMObjectInfo")]
     public sealed class ORMObjectInfo : ISerializable
     {
        
@@ -39,7 +36,6 @@ namespace Silvtek.ORMEngine
         /// Gets a value indicating whether this instance is locked.
         /// </summary>
         /// <value><c>true</c> if this instance is locked; otherwise, <c>false</c>.</value>
-        [SoapIgnore]
         public bool IsLocked
         {
             get { return isLocked; }
@@ -51,7 +47,6 @@ namespace Silvtek.ORMEngine
         /// <value>
         /// 	<c>true</c> if this instance is read only; otherwise, <c>false</c>.
         /// </value>
-        [SoapIgnore]
         public bool IsReadOnly
         {
             get { return isReadOnly; }
@@ -60,13 +55,11 @@ namespace Silvtek.ORMEngine
         /// <summary>
         /// Gets whether the current instance is isolated from the object pool. It always load from the database.
         /// </summary>
-        [SoapIgnore]
         public bool IsIsolated
         {
             get { return isIsolated; }
         }
 
-        [SoapIgnore]
         public bool IsDirty
         {
             get { return isDirty; }
@@ -76,7 +69,6 @@ namespace Silvtek.ORMEngine
         /// Get whether the current instance is a copy. If is true, the current instace is a copy, if it is false
         /// the current instance was loaded directly from the database.
         /// </summary>
-        [SoapElement("IsCopy")]
         public bool IsCopy
         {
             get { return isCopy; }
@@ -85,26 +77,35 @@ namespace Silvtek.ORMEngine
         /// <summary>
         /// Gets the last sql command executed.
         /// </summary>
-        [SoapIgnore]
         public string LastSql
         {
             get { return lastSql; }
         }
 
-        [SoapIgnore]
+        /// <summary>
+        /// Gets or sets a value indicating whether [cancel events].
+        /// </summary>
+        /// <value><c>true</c> if [cancel events]; otherwise, <c>false</c>.</value>
         public bool CancelEvents
         {
             get { return cancelEvent; }
             set { cancelEvent = value; }
         }
 
-        [SoapElement("BindStatus")]
+        /// <summary>
+        /// Gets the binding status.
+        /// </summary>
+        /// <value>The binding status.</value>
         public BindingStatus BindingStatus
         {
             get { return bindingStatus; }
         }
 
 
+        /// <summary>
+        /// Gets the schema.
+        /// </summary>
+        /// <value>The schema.</value>
         internal ObjectSchemaInfo Schema
         {
             get { return schema; }
@@ -130,6 +131,10 @@ namespace Silvtek.ORMEngine
         }
 
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ORMObjectInfo"/> class.
+        /// </summary>
+        /// <param name="type">The type.</param>
         internal ORMObjectInfo(Type type)
         {
             schema = ObjectSchemaContainer.GetObjectSchema(type);
@@ -142,11 +147,17 @@ namespace Silvtek.ORMEngine
             bindingStatus = BindingStatus.Unbind;
         }
 
+        /// <summary>
+        /// Lockeds this instance.
+        /// </summary>
         public void Locked()
         {
             isLocked = true;
         }
 
+        /// <summary>
+        /// Sets the read only.
+        /// </summary>
         public void SetReadOnly()
         {
             isReadOnly = true;
@@ -160,11 +171,17 @@ namespace Silvtek.ORMEngine
             isIsolated = true;
         }
 
+        /// <summary>
+        /// Marks as dirty.
+        /// </summary>
         internal void MarkAsDirty()
         {
             isDirty = true;
         }
 
+        /// <summary>
+        /// Removes the dirty status.
+        /// </summary>
         internal void RemoveDirtyStatus()
         {
             isDirty = false;
@@ -183,24 +200,46 @@ namespace Silvtek.ORMEngine
             return lastSql;
         }
 
+        /// <summary>
+        /// Gets the select statement.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         internal string GetSelectStatement(object source)
         {
             lastSql = Schema.SqlBuilder.GetSelectStatement(source);
             return lastSql;
         }
 
+        /// <summary>
+        /// Gets the delete statement.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         internal string GetDeleteStatement(object source)
         {
             lastSql = Schema.SqlBuilder.GetDeleteStatement(source);
             return lastSql;
         }
 
+        /// <summary>
+        /// Gets the update statement.
+        /// </summary>
+        /// <param name="fields">The fields.</param>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         internal string GetUpdateStatement(MemberFieldList fields, object source)
         {
             lastSql = Schema.SqlBuilder.GetUpdateStatement(fields, source);
             return lastSql;
         }
 
+        /// <summary>
+        /// Gets the insert command.
+        /// </summary>
+        /// <param name="cnn">The CNN.</param>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         internal Command GetInsertCommand(Connection cnn, object source)
         {
             if (schema.MappedMembers.HasSequentialMember) LoadSequentialMembers(source);
@@ -284,16 +323,28 @@ namespace Silvtek.ORMEngine
 
         #endregion
 
+        /// <summary>
+        /// Sets the bind status.
+        /// </summary>
+        /// <param name="status">The status.</param>
         internal void SetBindStatus(BindingStatus status)
         {
             bindingStatus = status;
         }
 
+        /// <summary>
+        /// Registers as copy.
+        /// </summary>
         internal void RegisterAsCopy()
         {
             isCopy = true;
         }
 
+        /// <summary>
+        /// Creates the identifier string.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         internal string CreateIdentifierString(object source)
         {
             //StringBuilder sbuilder = new StringBuilder(1000);
@@ -301,14 +352,14 @@ namespace Silvtek.ORMEngine
             byte[] identifier;
             using (MemoryStream stream = new MemoryStream())
             {
-                byte[] objectName = Utility.ConverToBytes(source.GetType().FullName);
+                byte[] objectName = Utility.ConvertToBytes(source.GetType().FullName);
                 stream.Write(objectName, 0, objectName.Length);
 
                 MapMember[] pks = schema.MappedMembers.GetAllPrimaryKeyMembers();
 
                 for (int i = 0; i < pks.Length; i++)
                 {
-                    byte[] bytes = Utility.ConverToBytes(pks[i].GetMemberValue(source));
+                    byte[] bytes = Utility.ConvertToBytes(pks[i].GetMemberValue(source));
                     stream.Write(bytes, 0, bytes.Length);
                 }
 
