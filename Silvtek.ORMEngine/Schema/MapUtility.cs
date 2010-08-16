@@ -14,8 +14,8 @@ namespace Silvtek.ORMEngine.Schema
     internal sealed class MapUtility
 // ReSharper restore ConvertToStaticClass
     {
-        private const string VERSION_REGEX = @"(?<=\[{1})[\d]+(?<!\]{1})";
-        private const string DIGEST_REGEX = @"(?<=\[{1}[\d]+\]{1}).*";
+        private const string _VERSION_REGEX = @"(?<=\[{1})[\d]+(?<!\]{1})";
+        private const string _DIGEST_REGEX = @"(?<=\[{1}[\d]+\]{1}).*";
 
         private MapUtility() { }
 
@@ -1174,11 +1174,24 @@ namespace Silvtek.ORMEngine.Schema
 
         #endregion
 
+        /// <summary>
+        /// Gets the full name of the column.
+        /// </summary>
+        /// <param name="schema">The schema.</param>
+        /// <param name="member">The member.</param>
+        /// <returns></returns>
         public static string GetFullColumnName(ObjectSchemaInfo schema, MapMember member)
         {
             return String.Format("{0}.{1}", schema.TableName, member.ColumnName); 
         }
 
+        /// <summary>
+        /// Creates the record digest.
+        /// </summary>
+        /// <param name="members">The members.</param>
+        /// <param name="obj">The obj.</param>
+        /// <param name="version">The version.</param>
+        /// <returns></returns>
         internal static string CreateRecordDigest(MapMemberList members, object obj, int version)
         {
             ArrayList list = new ArrayList();
@@ -1207,6 +1220,12 @@ namespace Silvtek.ORMEngine.Schema
 
         }
 
+        /// <summary>
+        /// Generates the standard record digest.
+        /// </summary>
+        /// <param name="members">The members.</param>
+        /// <param name="obj">The obj.</param>
+        /// <returns></returns>
         internal static string GenerateStandardRecordDigest(MapMemberList members, object obj)
         {
             ArrayList list = new ArrayList();
@@ -1227,12 +1246,17 @@ namespace Silvtek.ORMEngine.Schema
             return provider.GenerateDigest(objs);
         }
 
+        /// <summary>
+        /// Gets the record version.
+        /// </summary>
+        /// <param name="fulldigestText">The fulldigest text.</param>
+        /// <returns></returns>
         internal static int GetRecordVersion(string fulldigestText)
         {
             if (fulldigestText == null || fulldigestText.Length == 0) return 0;
 
             int version = 0;
-            Match match = Regex.Match(fulldigestText, VERSION_REGEX);
+            Match match = Regex.Match(fulldigestText, _VERSION_REGEX);
 
             if (match.Success)
             {
@@ -1250,6 +1274,12 @@ namespace Silvtek.ORMEngine.Schema
            
         }
 
+        /// <summary>
+        /// Compares the record digest.
+        /// </summary>
+        /// <param name="members">The members.</param>
+        /// <param name="obj">The obj.</param>
+        /// <returns></returns>
         internal static DigestComparisonResult CompareRecordDigest(MapMemberList members, object obj)
         {
             ArrayList list = new ArrayList();
@@ -1267,7 +1297,7 @@ namespace Silvtek.ORMEngine.Schema
                     }
 
                     provider = member.Properties.GetRecordDigestProvider();
-                    Match match = Regex.Match(fulldigestText, DIGEST_REGEX);
+                    Match match = Regex.Match(fulldigestText, _DIGEST_REGEX);
                     
                     if (match.Success)
                     {
@@ -1294,9 +1324,14 @@ namespace Silvtek.ORMEngine.Schema
             return provider.ValidateDigest(digest, objs);
         }
 
+        /// <summary>
+        /// Gets the digest.
+        /// </summary>
+        /// <param name="fulldigestvalue">The fulldigestvalue.</param>
+        /// <returns></returns>
         internal static string GetDigest(string fulldigestvalue)
         {
-            Match match = Regex.Match(fulldigestvalue, DIGEST_REGEX);
+            Match match = Regex.Match(fulldigestvalue, _DIGEST_REGEX);
             string digest = String.Empty;
             if (match.Success)
             {
@@ -1306,6 +1341,13 @@ namespace Silvtek.ORMEngine.Schema
             return digest;
         }
 
+        /// <summary>
+        /// Sets the record digest.
+        /// </summary>
+        /// <param name="members">The members.</param>
+        /// <param name="obj">The obj.</param>
+        /// <param name="version">The version.</param>
+        /// <returns></returns>
         internal static string SetRecordDigest(MapMemberList members, object obj, int version)
         {
             ArrayList list = new ArrayList();
@@ -1331,6 +1373,12 @@ namespace Silvtek.ORMEngine.Schema
             return digest;
         }
 
+        /// <summary>
+        /// Dbs the type mapping.
+        /// </summary>
+        /// <param name="properties">The properties.</param>
+        /// <param name="dataType">Type of the data.</param>
+        /// <returns></returns>
         internal static DbType DbTypeMapping(MapMemberProperties properties, DataType dataType)
         {
             switch (dataType)

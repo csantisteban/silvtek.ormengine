@@ -261,12 +261,6 @@
     <Compile Include="Transaction.cs" />
     <Compile Include="UniqueAttribute.cs" />
     <Compile Include="Utility.cs" />
-    <Compile Include="Xml\ORMServiceResult.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Xml\ORMServicesResults.cs">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resource.resx">
