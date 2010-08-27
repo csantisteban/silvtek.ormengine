@@ -10,6 +10,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Runtime.Serialization;
 using System.Reflection;
 using Silvtek.ORMEngine.Configs;
+using Silvtek.ORMEngine.DataQuery;
 using Silvtek.ORMEngine.Schema;
 using Silvtek.ORMEngine.Caching;
 using Silvtek.ORMEngine.Data;
@@ -371,11 +372,13 @@ namespace Silvtek.ORMEngine
             CheckReadOnlyState(Action.Create);
             CheckLockedState(Action.Create);
 
+            
+
             if (ObjectInfo.MappedMembers.HasDigestRecordMember)
             {
                 try
                 {
-                    string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject , 1);
+                    MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject , 1);
                     //recordDigest = MapUtility.GetDigest(fulldigestValue);
                     recordVersion = new RecordVersion(GetRecordIdentifier(), 1);
                 }
@@ -392,6 +395,7 @@ namespace Silvtek.ORMEngine
             }
 
             this.memberFieldList.RefreshObjectSource();
+            CheckUniqueValues(Action.Create);
            
             int rv;
             string sqlText = String.Empty;
@@ -406,7 +410,7 @@ namespace Silvtek.ORMEngine
 
                 // FIX HERE -- Test if uses db identity should come from schema.
                 // FIX HERE -- SetIndentity method should return the value. not set
-                if (objectInfo.Schema.SqlBuilder.HasSqlServerSequential) objectInfo.Schema.SqlBuilder.SetIdentityValue(cnn, objectInfo.Schema, SourceObject);
+                if (objectInfo.Schema.SqlBuilder.HasIdentityColumn) objectInfo.Schema.SqlBuilder.SetIdentityValue(cnn, objectInfo.Schema, SourceObject);
             }
             catch (Exception e)
             {
@@ -439,7 +443,51 @@ namespace Silvtek.ORMEngine
             }
         }
 
-        /// <summary>
+	    private void CheckUniqueValues(Action action)
+	    {
+	        if (ObjectInfo.MappedMembers.HasUniqueMember)
+	        {
+
+	            MapMember[] members = ObjectInfo.MappedMembers.GetAllUniqueMembers();
+	            Type type = this.SourceObject.GetType();
+	            foreach(MapMember member in members)
+	            {
+                    if (action == Action.Save)
+                    {
+                        if (!this.FieldList[member.MemberName].HasChanged)
+                        {
+                            continue;
+                        }
+                    }
+
+	                AggregateQuery query = new AggregateQuery(Aggregate.Count, type, member.MemberName, false);
+	                CriteriaItem item = new CriteriaItem(type, member.MemberName);
+	                item.EqualTo(member.GetMemberValue(SourceObject));
+	                query.Criterias.Add(item);
+
+                    if (action == Action.Save)
+                    {
+                        MapMember[] pks = ObjectInfo.MappedMembers.GetAllPrimaryKeyMembers();
+                        foreach (MapMember pk in pks)
+                        {
+                            CriteriaItem tmp = new CriteriaItem(type, pk.MemberName);
+                            tmp.NotEqualTo(pk.GetMemberValue(SourceObject));
+                            query.Criterias.And(tmp);
+                        }
+                    }
+
+	                query.Execute(true);
+	                if (query.Result.Length > 0 && Convert.ToInt32(query.Result[0]) > 0)
+	                {
+	                    FireFailed(Action.Create, "Unique contraint violated. ");
+	                    throw new UniqueConstraintViolatedException("attempted to create record with a duplicated value for " + member.MemberName + " belonging to object " + type.FullName);
+	                }
+                    
+	            }
+	        }
+	    }
+
+	    /// <summary>
         /// Applies changes and fire events after a succesful insert. This method always
         /// should be internal.
         /// </summary>
@@ -1229,6 +1277,7 @@ namespace Silvtek.ORMEngine
                 return;
             }
 
+            CheckUniqueValues(Action.Save);
             Connection cnn = objectInfo.Schema.GetConnection();
 
             lock(SyncRoot)

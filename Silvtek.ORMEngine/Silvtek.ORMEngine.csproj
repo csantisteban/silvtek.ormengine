@@ -246,6 +246,7 @@
     <Compile Include="Schema\ObjectAttributesSchemaInfo.cs" />
     <Compile Include="Schema\ObjectSchemaInfo.cs" />
     <Compile Include="TimestampAttribute.cs" />
+    <Compile Include="UniqueConstraintViolatedException.cs" />
     <Compile Include="XmlMapping\ObjectXmlSchemaException.cs" />
     <Compile Include="XmlMapping\ObjectXmlSchemaInfo.cs" />
     <Compile Include="Schema\ORMInfoPool.cs" />

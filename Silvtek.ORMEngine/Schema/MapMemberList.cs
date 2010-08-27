@@ -24,42 +24,99 @@ namespace Silvtek.ORMEngine.Schema
         private bool hasBinaryMember;
         private readonly Hashtable columnMapping;
         private readonly StringDictionary insensitiveCaseMemberMapping;
-        private AliasMaps aliasMaps;
+        private readonly AliasMaps aliasMaps;
+        private bool hasUniqueMember;
+        private MapMember[] primaryKeysMembers;
+        private MapMember[] sequentialMembers;
+        private MapMember identityMember;
+        private MapMember[] uniqueMembers;
 
 
+        /// <summary>
+        /// Gets the alias.
+        /// </summary>
+        /// <value>The alias.</value>
         internal AliasMaps Alias
         {
             get { return aliasMaps; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance has time stamp.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has time stamp; otherwise, <c>false</c>.
+        /// </value>
         internal bool HasTimeStamp
         {
             get { return hasTimestamp; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance has sequential member.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has sequential member; otherwise, <c>false</c>.
+        /// </value>
         internal bool HasSequentialMember
         {
             get { return hasSequentialMember; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance has digest record member.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has digest record member; otherwise, <c>false</c>.
+        /// </value>
         internal bool HasDigestRecordMember
         {
             get { return hasDigestRecordMember; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance has db identity member.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has db identity member; otherwise, <c>false</c>.
+        /// </value>
         internal bool HasDbIdentityMember
         {
             get { return hasDbIdentityMember; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance has primary keys.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has primary keys; otherwise, <c>false</c>.
+        /// </value>
         internal bool HasPrimaryKeys
         {
             get { return hasPrimaryKeys; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance has binary member.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has binary member; otherwise, <c>false</c>.
+        /// </value>
         public bool HasBinaryMember
         {
             get { return hasBinaryMember; }
+        }
+
+
+        /// <summary>
+        /// Gets a value indicating whether this instance has unique member.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance has unique member; otherwise, <c>false</c>.
+        /// </value>
+        public bool HasUniqueMember
+        {
+            get { return hasUniqueMember; }
         }
 
         internal MapMember this[int index]
@@ -74,7 +131,11 @@ namespace Silvtek.ORMEngine.Schema
         {
             columnMapping = new Hashtable();
             insensitiveCaseMemberMapping = new StringDictionary();
-            aliasMaps = new AliasMaps(); 
+            aliasMaps = new AliasMaps();
+            primaryKeysMembers = null;
+            sequentialMembers = null;
+            identityMember = null;
+            uniqueMembers = null;
         }
 
         public new IEnumerator GetEnumerator()
@@ -99,6 +160,8 @@ namespace Silvtek.ORMEngine.Schema
             if (!hasDigestRecordMember) hasDigestRecordMember = (properties.HasRecordDigestProvider);
             if (!hasTimestamp) hasTimestamp = (properties.ContainsAttribute(MemberAttributes.Timestamp));
             if (!hasBinaryMember) hasBinaryMember = (properties.DataType == DataType.Binary || properties.DataType == DataType.Object);
+            if (!hasUniqueMember) hasUniqueMember = properties.IsUnique;
+
 
             BaseAdd(member.Name, mappedMember);
             insensitiveCaseMemberMapping.Add(member.Name.ToLower(), member.Name);
@@ -161,51 +224,95 @@ namespace Silvtek.ORMEngine.Schema
 
         internal MapMember[] GetAllSequentialMembers()
         {
-            ArrayList list = new ArrayList();
-            int size = Count;
-            for (int i = 0; i < size; i++)
+            if (sequentialMembers == null)
             {
-                MapMember tempMember = (MapMember)BaseGet(i);
-                if (tempMember.Properties.HasSequenceProvider)
+                ArrayList list = new ArrayList();
+                int size = Count;
+                for (int i = 0; i < size; i++)
                 {
-                    list.Add(tempMember);
+                    MapMember tempMember = (MapMember) BaseGet(i);
+                    if (tempMember.Properties.HasSequenceProvider)
+                    {
+                        list.Add(tempMember);
+                    }
                 }
+
+                sequentialMembers =(MapMember[]) list.ToArray(typeof (MapMember));
             }
 
-            return (MapMember[])list.ToArray(typeof(MapMember));
+            return sequentialMembers;
         }
 
         internal MapMember[] GetAllPrimaryKeyMembers()
         {
-            ArrayList list = new ArrayList();
-            int size = this.Count;
-            for (int i = 0; i < size; i++)
+            if (primaryKeysMembers == null)
             {
-                MapMember tempMember = (MapMember)BaseGet(i);
-                if (tempMember.Properties.IsPrimaryKey)
+                ArrayList list = new ArrayList();
+                int size = this.Count;
+                for (int i = 0; i < size; i++)
                 {
-                    list.Add(tempMember);
+                    MapMember tempMember = (MapMember) BaseGet(i);
+                    if (tempMember.Properties.IsPrimaryKey)
+                    {
+                        list.Add(tempMember);
+                    }
                 }
+
+                primaryKeysMembers = (MapMember[]) list.ToArray(typeof (MapMember));
             }
 
-            return (MapMember[])list.ToArray(typeof(MapMember));
+            return primaryKeysMembers;
         }
 
+        /// <summary>
+        /// Gets all unique members.
+        /// </summary>
+        /// <returns></returns>
+        internal MapMember[] GetAllUniqueMembers()
+        {
+            if (uniqueMembers == null)
+            {
+                ArrayList list = new ArrayList();
+                int size = this.Count;
+                for (int i = 0; i < size; i++)
+                {
+                    MapMember tempMember = (MapMember) BaseGet(i);
+                    if (tempMember.Properties.IsUnique)
+                    {
+                        list.Add(tempMember);
+                    }
+                }
+                uniqueMembers = (MapMember[])list.ToArray(typeof(MapMember));
+            }
+
+            return uniqueMembers;
+           
+        }
+
+        /// <summary>
+        /// Gets the db identity member.
+        /// </summary>
+        /// <returns></returns>
         internal MapMember GetDbIdentityMember()
         {
-            MapMember retValue = null;
-            int size = this.Count;
-            for (int i = 0; i < size; i++)
+            if (identityMember == null)
             {
-                MapMember tempMember = (MapMember)BaseGet(i);
-                if (tempMember.Properties.UseDatabaseIdentity)
+                int size = this.Count;
+                for (int i = 0; i < size; i++)
                 {
-                    retValue = tempMember;
-                    break;
+                    MapMember tempMember = (MapMember) BaseGet(i);
+                    if (tempMember.Properties.UseDatabaseIdentity)
+                    {
+                        identityMember = tempMember;
+                        break;
+                    }
                 }
+
             }
 
-            return retValue;
+            return identityMember;
         }
+
+
     }
 }
