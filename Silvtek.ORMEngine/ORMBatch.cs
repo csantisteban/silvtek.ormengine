@@ -20,6 +20,8 @@ namespace Silvtek.ORMEngine
 
         private string lastSql;
         private double timems;
+        private bool transactional;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ORMBatch"/> class.
@@ -29,6 +31,7 @@ namespace Silvtek.ORMEngine
             batch = new ArrayList();
             lastSql = String.Empty;
             preLoadUnboundObjects = false;
+            transactional = true;
 
         }
 
@@ -61,6 +64,12 @@ namespace Silvtek.ORMEngine
         {
             get { return preLoadUnboundObjects; }
             set { preLoadUnboundObjects = value; }
+        }
+
+        public bool IsTransactional
+        {
+            get { return transactional; }
+            set { transactional = value; }
         }
 
 
@@ -121,9 +130,18 @@ namespace Silvtek.ORMEngine
 
         private int ExecuteBatchSingleMode(string connectionName)
         {
+            ConnectionInfo info = ConnectionManager.Current.GetConnectionSettings(connectionName);
+            
             DateTime start = DateTime.Now;
             StringBuilder builder = new StringBuilder();
             inProgressBatch = new ArrayList(batch);
+
+            //if(this.transactional)
+            //{
+            //    builder.Append(info.DbTypeFormatter.BeginTransactionCommand());
+            //    builder.Append(";");
+            //    builder.Append(Environment.NewLine);
+            //}
 
             foreach (BatchItem item in inProgressBatch)
             {
@@ -182,6 +200,12 @@ namespace Silvtek.ORMEngine
 
             }
 
+            //if (this.transactional)
+            //{
+            //    builder.Append(info.DbTypeFormatter.CommitTransactionCommand());
+            //    builder.Append(";");
+            //    builder.Append(Environment.NewLine);
+            //}
 
             Connection cnn = null;
             int result = 0;
@@ -191,16 +215,32 @@ namespace Silvtek.ORMEngine
             try
             {
                 cnn = ConnectionManager.Current.GetConnection(connectionName);
+                cnn.Open();                
+
+                if (this.IsTransactional)
+                {
+                    StartTransaction(cnn);
+                }
+
                 Command cmd = new Command(cnn);
                 cmd.CommandText = sqltext;
                 cmd.CommandType = CommandType.Text;
-                cnn.Open();
                 result = cmd.ExecuteNonQuery();
                 this.lastSql = cmd.CommandText;
 
+                if (this.IsTransactional)
+                {
+                    CommitTransation(cnn);
+                }
             }
             catch (Exception ex)
             {
+                if (this.IsTransactional)
+                {
+                    RollbackTransaction(cnn);
+                    RollbackObjects(ex);
+                }
+               
                 FireFailed(ex);
                 throw;
             }
@@ -219,6 +259,42 @@ namespace Silvtek.ORMEngine
             return result;            
         }
 
+        private void StartTransaction(Connection cnn)
+        {
+            if (cnn.State == ConnectionState.Open)
+            {
+                Command cmd = new Command(cnn);
+                cmd.CommandText = cnn.DbTypeFormatter.BeginTransactionCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+                this.lastSql = cmd.CommandText;
+            } 
+        }
+
+        private void CommitTransation(Connection cnn)
+        {
+            if (cnn.State == ConnectionState.Open)
+            {
+                Command cmd = new Command(cnn);
+                cmd.CommandText = cnn.DbTypeFormatter.CommitTransactionCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+                this.lastSql = cmd.CommandText;
+            }    
+        }
+
+        private void RollbackTransaction(Connection cnn)
+        {
+            if (cnn.State == ConnectionState.Open)
+            {
+                Command cmd = new Command(cnn);
+                cmd.CommandText = cnn.DbTypeFormatter.RollbackTranscationCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.ExecuteNonQuery();
+                this.lastSql = cmd.CommandText;
+            }
+        }
+
         private int ExecuteBatchMultipleCallsMode(string connectionName)
         {
             DateTime start = DateTime.Now;
@@ -231,6 +307,11 @@ namespace Silvtek.ORMEngine
 
                 Command cmd = null;
                 cnn.Open();
+                if (this.IsTransactional)
+                {
+                    StartTransaction(cnn);
+                }
+
                 foreach (BatchItem item in inProgressBatch)
                 {
                     ORMObject tmp = item.Object as ORMObject;
@@ -278,22 +359,35 @@ namespace Silvtek.ORMEngine
                         default:
                             throw new InvalidOperationException("BatchAction " + item.Action + " is not supported.");
                     }
+
+                    if (cmd == null) return 0;
+
+
+                    int total = cmd.ExecuteNonQuery();
+                    cnn.UpdateExecutionDateTime();
+
+                    result = result + total;
+                   
                 }
 
 
 
-                if (cmd == null) return 0;
 
+                if (this.IsTransactional)
+                {
+                    CommitTransation(cnn);
+                }
 
-                int total = cmd.ExecuteNonQuery();
-                cnn.UpdateExecutionDateTime();
-
-                result = result + total;
                 this.lastSql = cmd.CommandText;
-
             }
             catch (Exception ex)
             {
+                if (this.IsTransactional)
+                {
+                    RollbackTransaction(cnn);
+                    RollbackObjects(ex);
+                }
+
                 FireFailed(ex);
                 throw;
             }
@@ -345,6 +439,31 @@ namespace Silvtek.ORMEngine
                         break;
                     case BatchAction.Remove:
                         tmp.AfterRemoveSucceed();
+                        break;
+                    default:
+                        throw new InvalidOperationException("BatchAction " + item.Action + " is not supported.");
+                }
+            }
+        }
+
+        public void RollbackObjects(Exception e)
+        {
+            foreach (BatchItem item in batch)
+            {
+                ORMObject tmp = item.Object as ORMObject;
+                if (tmp == null) continue;
+                switch (item.Action)
+                {
+                    case BatchAction.Create:
+                        tmp.FireFailed(Action.Create, e.Message);
+                        break;
+                    case BatchAction.Save:
+                        tmp.InternalLoadForSave();
+                        tmp.FireFailed(Action.Save, e.Message);
+                        break;
+                    case BatchAction.Remove:
+                        tmp.Load();
+                        tmp.FireFailed(Action.Remove, e.Message);
                         break;
                     default:
                         throw new InvalidOperationException("BatchAction " + item.Action + " is not supported.");

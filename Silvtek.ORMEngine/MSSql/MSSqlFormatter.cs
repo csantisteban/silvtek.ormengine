@@ -128,6 +128,21 @@ namespace Silvtek.ORMEngine.MSSql
         {
             return "select GetDate()";
         }
+
+        public override string BeginTransactionCommand()
+        {
+            return "BEGIN TRAN";
+        }
+
+        public override string CommitTransactionCommand()
+        {
+            return "COMMIT TRAN";
+        }
+
+        public override string RollbackTranscationCommand()
+        {
+            return "ROLLBACK TRAN";
+        }
     }
 
 

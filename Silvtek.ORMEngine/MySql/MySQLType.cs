@@ -119,6 +119,21 @@ namespace Silvtek.ORMEngine.MySql
         {
             get { return "@"; }
         }
+
+        public override string BeginTransactionCommand()
+        {
+            return "START TRANSACTION;";
+        }
+
+        public override string CommitTransactionCommand()
+        {
+            return "COMMIT;";
+        }
+
+        public override string RollbackTranscationCommand()
+        {
+            return "ROLLBACK;";
+        }
     }
 }
 

@@ -80,5 +80,11 @@ namespace Silvtek.ORMEngine
 
         public abstract string GetServerDateTimeCommand();
 
-	}
+        public abstract string BeginTransactionCommand();
+
+        public abstract string CommitTransactionCommand();
+
+        public abstract string RollbackTranscationCommand();
+
+    }
 }
