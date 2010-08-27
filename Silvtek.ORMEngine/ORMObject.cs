@@ -408,7 +408,7 @@ namespace Silvtek.ORMEngine
                 // FIX HERE -- SetIndentity method should return the value. not set
                 if (objectInfo.Schema.SqlBuilder.HasSqlServerSequential) objectInfo.Schema.SqlBuilder.SetIdentityValue(cnn, objectInfo.Schema, SourceObject);
             }
-            catch (DbDataException e)
+            catch (Exception e)
             {
                 //Fire Events.
                 FireFailed(Action.Create, Utility.Resources["FAILED_REASON_EXCEPTION"]);
@@ -567,13 +567,13 @@ namespace Silvtek.ORMEngine
                reader.Close();
 
            }
-           catch (DbDataException e)
+           catch (Exception e)
            {
                //Fire Events.
                FireFailed(Action.Load, Utility.Resources["FAILED_REASON_EXCEPTION"]);
                FireError(Action.Load, e, sql);
                string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
-               throw new ORMException(exMsg);
+               throw new ORMException(exMsg, e);
            }
            finally
            {
@@ -894,12 +894,12 @@ namespace Silvtek.ORMEngine
                 cnn.Open();
                 rv = cmd.ExecuteNonQuery();
             }
-            catch (DbDataException e)
+            catch (Exception e)
             {
                 FireFailed(Action.Remove, Utility.Resources["FAILED_REASON_EXCEPTION"]);
                 FireError(Action.Remove, e, sql);
                 string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
-                throw new ORMException(exMsg);
+                throw new ORMException(exMsg, e);
 
             }
             finally
@@ -1262,7 +1262,7 @@ namespace Silvtek.ORMEngine
 
 
                 }
-                catch (DbDataException e)
+                catch (Exception e)
                 {
                     FireFailed(Action.Save, Utility.Resources["FAILED_REASON_EXCEPTION"]);
                     FireError(Action.Save, e, sqltext);

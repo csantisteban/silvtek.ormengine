@@ -72,29 +72,24 @@ namespace Silvtek.ORMEngine.Data
 		/// </summary>
 		/// <param name="cmdText">Sql Command</param>
 		/// <param name="cnn">The <see cref="Connection" /> which this instance will be bound.</param>
-		public Command(string cmdText, Connection cnn)
+        public Command(string cmdText, Connection cnn)
 		{
-            try
-            {
-		       cmd = cnn.CreateCommand();
-            }
-            catch(Exception e)
-            {
-               throw new DbDataException(e);
-            }
 
-            if (cmdText != null && cmdText.Length > 0)
-            {
-                CommandText = cmdText;
-            }
+		    cmd = cnn.CreateCommand();
+
+
+		    if (cmdText != null && cmdText.Length > 0)
+		    {
+		        CommandText = cmdText;
+		    }
 
 		    type = cnn.ProviderType;
-	        dbtype = cnn.DbTypeFormatter;
-            settings = cnn.Settings;
-            executionTime = TimeSpan.Zero;
-            currentConnection = cnn;
+		    dbtype = cnn.DbTypeFormatter;
+		    settings = cnn.Settings;
+		    executionTime = TimeSpan.Zero;
+		    currentConnection = cnn;
 		    this.CommandTimeout = cnn.CommandTimeout;
-       
+
 		}
 
         ///<summary>
@@ -235,17 +230,11 @@ namespace Silvtek.ORMEngine.Data
 		{
 		   object obj = null;
            DateTime start  = DateTime.Now;
-		   DataReader reader;
 		   
 		   UpdateConnectionExecutionTime();
-           try
-           {
-              reader = this.ExecuteReader();
-           }
-           catch(Exception e)
-           {
-             throw new DbDataException(e);
-           }
+
+           DataReader reader = this.ExecuteReader();
+          
 
 		   if (reader.Read())
 		   {
@@ -268,17 +257,11 @@ namespace Silvtek.ORMEngine.Data
 		IDataReader IDbCommand.ExecuteReader(CommandBehavior behavior)
 		{
           DateTime start = DateTime.Now;
-		  DataReader reader;
 		  
 		  UpdateConnectionExecutionTime();
-          try
-          {
-            reader = new DataReader(cmd.ExecuteReader(behavior), type);
-          }
-          catch(Exception e)
-          {
-            throw new DbDataException(e);
-          }
+
+          DataReader reader = new DataReader(cmd.ExecuteReader(behavior), type);
+         
           
           executionTime = DateTime.Now - start;
           settings.Stats.SetExecutionTime(executionTime);
@@ -290,28 +273,22 @@ namespace Silvtek.ORMEngine.Data
 		/// </summary>
 		/// <param name="behavior">The command behavior.</param>
 		/// <returns>An instance of the datareader</returns>
-	    public DataReader ExecuteReader(CommandBehavior behavior)
+        public DataReader ExecuteReader(CommandBehavior behavior)
 		{
-          DateTime start = DateTime.Now;
-		  DataReader reader;
+		    DateTime start = DateTime.Now;
 
-		  UpdateConnectionExecutionTime();
-          try
-          {
-              reader = new DataReader(cmd.ExecuteReader(behavior), type);
-          }
-          catch(Exception e)
-          {
-            throw new DbDataException(e);
-          }
-          
-          
-          executionTime = DateTime.Now - start;
-          settings.Stats.SetExecutionTime(executionTime);
-		  return reader;
+
+		    UpdateConnectionExecutionTime();
+
+		    DataReader reader = new DataReader(cmd.ExecuteReader(behavior), type);
+
+
+		    executionTime = DateTime.Now - start;
+		    settings.Stats.SetExecutionTime(executionTime);
+		    return reader;
 		}
 
-	    /// <summary>
+        /// <summary>
 		/// Execute sql command and returns a <see cref="DataReader " /> instance.
 		/// </summary>
 		/// <returns>An instance of the datareader</returns>
@@ -321,14 +298,9 @@ namespace Silvtek.ORMEngine.Data
 			DataReader reader;
 			
 			UpdateConnectionExecutionTime();
-            try
-            {
+          
                reader = new DataReader(cmd.ExecuteReader(), type);
-            }
-            catch(Exception e)
-            {
-              throw new DbDataException(e);
-            }
+          
             
             executionTime = DateTime.Now - start;
             settings.Stats.SetExecutionTime(executionTime);
@@ -345,14 +317,9 @@ namespace Silvtek.ORMEngine.Data
 			DataReader reader;
 			
 			UpdateConnectionExecutionTime();
-            try
-            {
+           
               reader = new DataReader(cmd.ExecuteReader(), type);
-            }
-            catch(Exception e)
-            {
-              throw new DbDataException(e);
-            }
+          
             
             executionTime = DateTime.Now - start;
             settings.Stats.SetExecutionTime(executionTime);
@@ -367,17 +334,11 @@ namespace Silvtek.ORMEngine.Data
 		public virtual int ExecuteNonQuery()
 		{
             DateTime start = DateTime.Now;
-            int rv = 0;
             
             UpdateConnectionExecutionTime();
-            try
-            {
-              rv = cmd.ExecuteNonQuery();
-            }
-            catch(Exception e)
-            {
-              throw new DbDataException(e);
-            }
+            
+              int rv = cmd.ExecuteNonQuery();
+           
 
             
             executionTime = DateTime.Now - start;

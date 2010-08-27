@@ -286,14 +286,9 @@ namespace Silvtek.ORMEngine.Data
                 throw new InvalidOperationException("Unable to open database connection. There is not settings for this connection instance. Please report this problem, it is a implementation defect (bug)");
             }
 
-            try
-            {
-                connection.Open();
-            }
-            catch (Exception e)
-            {
-                throw new DbDataException(e);
-            }
+           
+            connection.Open();
+           
 
             ConnectionManager.Current.AddOpenConnection(this);
             openTime = DateTime.Now;
@@ -319,14 +314,9 @@ namespace Silvtek.ORMEngine.Data
 		/// <param name="databaseName"></param>
 		public virtual void ChangeDatabase(string databaseName)
 		{
-            try
-            {
+            
 			  connection.ChangeDatabase(databaseName);
-            }
-            catch(Exception e)
-            {
-              throw new DbDataException(e);
-            }
+           
 		}
 
 		/// <summary>
@@ -352,14 +342,9 @@ namespace Silvtek.ORMEngine.Data
 		{
 			IDbTransaction trans;
 			
-            try
-            {
+            
              trans = connection.BeginTransaction(il);
-            }
-            catch(Exception e)
-            {
-              throw new DbDataException(e);
-            }
+           
             return trans;
 		}
 
@@ -373,14 +358,9 @@ namespace Silvtek.ORMEngine.Data
 		{
 			IDbTransaction trans;
 			
-            try
-            {
+            
               trans = connection.BeginTransaction();
-            }
-            catch(Exception e)
-            {
-              throw new DbDataException(e);
-            }
+          
 
             return trans;
 		}
