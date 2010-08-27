@@ -1,3 +1,8 @@
+#region Copyright
+// Copyright (c) 2002-2014 Carlos Silva-Santisteban. All rights reserved.
+// See LICENSE in the repository root.
+#endregion
+
 using System;
 using System.Collections;
 using System.Data;
@@ -1216,7 +1221,7 @@ namespace Silvtek.ORMEngine.Schema
             RecordDigestProvider provider = digestMemberField.Properties.GetRecordDigestProvider();
             object[] objs = (object[])list.ToArray(typeof (object));
 
-            return String.Format("[{1}]{0}", provider.GenerateDigest(objs), version);
+            return String.Format("[{1:0000}]{0}", provider.GenerateDigest(objs), version);
 
         }
 
@@ -1366,7 +1371,7 @@ namespace Silvtek.ORMEngine.Schema
             if (digestMemberField == null) return String.Empty;
             RecordDigestProvider provider = digestMemberField.Properties.GetRecordDigestProvider();
             object[] objs = (object[])list.ToArray(typeof(object));
-            string digest = String.Format("[{1}]{0}", provider.GenerateDigest(objs), version);
+            string digest = String.Format("[{1:0000}]{0}", provider.GenerateDigest(objs), version);
             
             digestMemberField.SetMemberValue(obj, digest);
             Debug.WriteLine("Set digest value "+digest);
