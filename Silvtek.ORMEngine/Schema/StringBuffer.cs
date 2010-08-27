@@ -1,3 +1,7 @@
+#region Copyright
+// Copyright (c) 2002-2014 Carlos Silva-Santisteban. All rights reserved.
+// See LICENSE in the repository root.
+#endregion
 
 namespace Silvtek.ORMEngine.Schema
 {

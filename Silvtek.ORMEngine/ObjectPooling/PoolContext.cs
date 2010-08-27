@@ -1,16 +1,5 @@
 // Copyright (c) 2002-2014 Carlos Silva-Santisteban. All rights reserved.
 // See LICENSE in the repository root.
-// 
-// VERSION CONTROL
-//   $Revision: 3 $ 
-//   $Author: carlos.santisteban $ 
-//   $UTCDate: 2009-02-21 00:22:08 $ $UTCModtime: 2009-01-04 04:38:54 $
-//   $Workfile: PoolContext.cs $
-// 
-//  DEVELOPER COMMENTS
-//   i.e  (01/01/0001  Initials    Comment)
-//   
-//  
 //  NOTES 
 //   i.e (#n Note)
 //  
