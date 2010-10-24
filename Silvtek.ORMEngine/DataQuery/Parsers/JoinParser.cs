@@ -40,7 +40,12 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
 		}
 
 		public string GetSql()
-		{						
+		{				
+		    if (criteria == null)
+		    {
+                throw new QueryException("Join does a criteria defined. User InnerJoin, LeftJoin, RightJoin to add criteria to your Join");
+		    }
+
 			string joinValue = GetJoinValue(joinType);
             string tableValue = objectInfo.TableName;
 

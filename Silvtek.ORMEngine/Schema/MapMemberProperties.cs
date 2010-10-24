@@ -147,11 +147,11 @@ namespace Silvtek.ORMEngine.Schema
 #endif
         }
 
-        [Obsolete("Use GetSequenceProvider instead")]
-        internal SequenceProvider SequenceProvider
-        {
-            get { return sequenceProvider; }
-        }
+        //[Obsolete("Use GetSequenceProvider instead")]
+        //internal SequenceProvider SequenceProvider
+        //{
+        //    get { return sequenceProvider; }
+        //}
 
         internal SequenceProvider GetSequenceProvider()
         {

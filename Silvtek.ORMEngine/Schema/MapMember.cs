@@ -81,16 +81,30 @@ namespace Silvtek.ORMEngine.Schema
             get { return properties; }
         }
 
+        /// <summary>
+        /// Gets the type of the map member.
+        /// </summary>
+        /// <value>The type of the map member.</value>
         public Type MapMemberType
         {
             get { return mapMemberType; }
         }
 
+        /// <summary>
+        /// Gets the type of the db.
+        /// </summary>
+        /// <value>The type of the db.</value>
         public DbType DbType
         {
             get { return dbType; }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MapMember"/> class.
+        /// </summary>
+        /// <param name="member">The member.</param>
+        /// <param name="properties">The properties.</param>
+        /// <param name="formatter">The formatter.</param>
         internal MapMember(MemberInfo member, MapMemberProperties properties, DbTypeFormatter formatter)
         {
             Debug.Assert((member != null), "member is null ");
@@ -135,6 +149,14 @@ namespace Silvtek.ORMEngine.Schema
             if (Properties.DataType != DataType.Binary && Properties.DataType != DataType.Object)
             {
                 throw new ORMException("Unable set binary value to an non-binary MapMember. DataType: "+Properties.DataType);
+            }
+
+            if (properties.IsEncryptionEnabled)
+            {
+                EncryptionProvider provider = properties.GetEncryptionProvider();
+
+                DataStream encryptedStream = new DataStream();
+                provider.DecryptStream(stream, encryptedStream);
             }
 
             if (properties.IsCompressionEnabled)
@@ -205,7 +227,7 @@ namespace Silvtek.ORMEngine.Schema
           
         }
 
-
+        // get binary value for field (stream, byte[], or custom object).
         private byte[] GetBinaryValue(object source)
         {
             object originalValue = GetMemberValue(source);
@@ -230,7 +252,20 @@ namespace Silvtek.ORMEngine.Schema
                     stream = new DataStream((Stream) originalValue);
                 }
 
-                returnValue = stream.ReadAllBytes();
+
+                if (properties.IsEncryptionEnabled)
+                {
+                    EncryptionProvider provider = properties.GetEncryptionProvider();
+
+                    DataStream encryptedStream = new DataStream();
+                    provider.EncryptStream(stream, encryptedStream);
+                    returnValue = encryptedStream.ReadAllBytes();
+                }
+                else
+                {
+                    returnValue = stream.ReadAllBytes();
+                }
+                
 
             }
             else if (MapMemberType == typeof(Byte[]) && Properties.DataType == DataType.Binary)
@@ -248,6 +283,17 @@ namespace Silvtek.ORMEngine.Schema
                 {
                     returnValue = (Byte[]) originalValue;
                 }
+
+                if (properties.IsEncryptionEnabled)
+                {
+                    EncryptionProvider provider = properties.GetEncryptionProvider();
+
+                    Stream originalStream = new DataStream(returnValue);
+                    DataStream encryptedStream = new DataStream();
+                    provider.EncryptStream(originalStream, encryptedStream);
+                    returnValue = encryptedStream.ReadAllBytes();
+                }
+
    
             }
             else if (MapMemberType == typeof(String) && Properties.DataType == DataType.Binary)
@@ -286,7 +332,20 @@ namespace Silvtek.ORMEngine.Schema
                         stream = new DataStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                     }
 
-                    returnValue = stream.ReadAllBytes();
+
+                    if (properties.IsEncryptionEnabled)
+                    {
+                        EncryptionProvider provider = properties.GetEncryptionProvider();
+
+                        DataStream encryptedStream = new DataStream();
+                        provider.EncryptStream(stream, encryptedStream);
+                        returnValue = encryptedStream.ReadAllBytes();
+                    }
+                    else
+                    {
+                        returnValue = stream.ReadAllBytes();
+                    }
+
                 }
                 
             
@@ -305,13 +364,25 @@ namespace Silvtek.ORMEngine.Schema
                         Stream compressedStream = compressionProvider.Compress(stream);
 
                         returnValue = new DataStream(compressedStream).ReadAllBytes();
-                    }
+                    }               
                     else
                     {
                         returnValue = new DataStream(stream).ReadAllBytes();
                     }
 
                     stream.Close();
+
+                    if (properties.IsEncryptionEnabled)
+                    {
+                        EncryptionProvider provider = properties.GetEncryptionProvider();
+
+                        Stream originalStream = new DataStream(returnValue);
+                        DataStream encryptedStream = new DataStream();
+                        provider.EncryptStream(originalStream, encryptedStream);
+                        returnValue = encryptedStream.ReadAllBytes();
+                    }
+
+                    
                 }
             }
 
@@ -320,6 +391,11 @@ namespace Silvtek.ORMEngine.Schema
         }
 
 
+        /// <summary>
+        /// Sets the data source value.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="value">The value.</param>
         internal void SetDataSourceValue(object source, object value)
         {
 
@@ -378,6 +454,11 @@ namespace Silvtek.ORMEngine.Schema
             }
         }
 
+        /// <summary>
+        /// Gets the data source value.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
         internal object GetDataSourceValue(object source)
         {
             object originalValue;
@@ -389,6 +470,7 @@ namespace Silvtek.ORMEngine.Schema
             {
                 originalValue = GetMemberValue(source);
 
+                // if encryption is enabled, then encrypt. DataType must be string. 
                 if (Properties.IsEncryptionEnabled && Properties.DataType == DataType.String)
                 {
                     EncryptionProvider provider = Properties.GetEncryptionProvider();
@@ -488,9 +570,6 @@ namespace Silvtek.ORMEngine.Schema
         /// Gets the current value of a mapped member.
         /// </summary>
         /// <param name="source">the object in which the mapped member (property/field) will be retrieved.</param>
-        /// <remarks>
-        /// <note>This method uses reflection to get the value to the <paramref name="source"/> object.</note>
-        /// </remarks>
         internal object GetMemberValue(object source)
         {
             if (member.MemberType == MemberTypes.Field)
@@ -539,8 +618,8 @@ namespace Silvtek.ORMEngine.Schema
         /// <returns></returns>
         internal object GetSequence(object obj)
         {
-            if (Properties.SequenceProvider == null) return -1;
-            return Properties.SequenceProvider.GetNextNumber(obj, this);
+            if (Properties.GetSequenceProvider() == null) return -1;
+            return Properties.GetSequenceProvider().GetNextNumber(obj, this);
         }
     }
 }

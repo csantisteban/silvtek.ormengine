@@ -13,13 +13,11 @@ namespace Silvtek.ORMEngine
         private readonly string password;
         private readonly string salt;
 
-        //public EncryptAttribute()
-        //{
-        //    provider = null;
-        //    password = "***REMOVED***"; // this one has to come from connection.config
-        //    salt = "***REMOVED***"; // this has to come from connection.config
-        //}
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EncryptAttribute"/> class.
+        /// </summary>
+        /// <param name="password">The password.</param>
+        /// <param name="salt">The salt.</param>
         public EncryptAttribute(string password, string salt)
         {
              provider = null;
@@ -27,6 +25,12 @@ namespace Silvtek.ORMEngine
             this.salt = salt;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EncryptAttribute"/> class.
+        /// </summary>
+        /// <param name="encryptProviderType">Type of the encrypt provider.</param>
+        /// <param name="password">The password.</param>
+        /// <param name="salt">The salt.</param>
         public EncryptAttribute(Type encryptProviderType, string password, string salt) : this(encryptProviderType)
         {
             this.password = password;
@@ -34,6 +38,10 @@ namespace Silvtek.ORMEngine
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EncryptAttribute"/> class.
+        /// </summary>
+        /// <param name="encryptProviderType">Type of the encrypt provider.</param>
         public EncryptAttribute(Type encryptProviderType) 
         {
             if (encryptProviderType == null)
@@ -50,7 +58,11 @@ namespace Silvtek.ORMEngine
 			}
         }
 
-        public EncryptionProvider GetProvider()
+        /// <summary>
+        /// Gets the provider.
+        /// </summary>
+        /// <returns></returns>
+        internal EncryptionProvider GetProvider()
         {
             if (provider == null)
             {

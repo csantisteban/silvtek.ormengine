@@ -119,6 +119,7 @@
     <Compile Include="ORMBatch.cs" />
     <Compile Include="ORMDefaults.cs" />
     <Compile Include="ORMEventArgs.cs" />
+    <Compile Include="ORMFileObject.cs" />
     <Compile Include="ORMNull.cs" />
     <Compile Include="ORMObjectProxy.cs" />
     <Compile Include="ORMSerializer.cs" />

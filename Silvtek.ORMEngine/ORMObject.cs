@@ -31,7 +31,7 @@ namespace Silvtek.ORMEngine
 	/// Represents an object mapped to a database table.
 	/// </summary>
     [Serializable]
-    public class ORMObject : ICloneable, ISerializable, IDataObject
+    public class ORMObject : ICloneable, ISerializable, IDataObject, IORMObject
 	{
         // Holds the unique identifier string for this object.
         private string identifierstring;
@@ -165,7 +165,9 @@ namespace Silvtek.ORMEngine
         [NonSerialized]
         internal protected AfterTransactionEventHandler AfterTransaction;
 
-        /// <summary>
+	    private bool isLoaded;
+
+	    /// <summary>
         /// Gets the bag value.
         /// </summary>
         /// <param name="key">The key.</param>
@@ -2213,6 +2215,10 @@ namespace Silvtek.ORMEngine
         }
         #endregion
 
-
-    }
+	    public bool IsLoaded
+	    {
+            get { return isLoaded; }
+            set { isLoaded = value; }
+	    }
+	}
 }

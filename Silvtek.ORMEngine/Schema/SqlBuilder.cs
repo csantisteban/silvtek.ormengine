@@ -70,7 +70,7 @@ namespace Silvtek.ORMEngine.Schema
             selectColumns = tmpColumnsListSelect.ToString();
         }
 
-        internal bool HasSqlServerSequential
+        internal bool HasIdentityColumn
         {
             get { return (databaseIdentityColumnIndex > -1); }
         }

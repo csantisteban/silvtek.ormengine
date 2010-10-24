@@ -2,11 +2,16 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using Silvtek.ORMEngine.Configs;
 
-
+/******************************************************************************
+ * DO NOT MODIFIED THE ENCRYPTION ALGORITHM.
+ * DOING SO WILL DISABLE THE DECRYPTION OF RECORDS
+ * FOR EXTENDING OR USING DIFFERENT ALGORITHG, PROVIDE DIFFERENT PROVIDERS
+ * ****************************************************************************/
 namespace Silvtek.ORMEngine.Encryption
 {
-    public class DefaultEncryptionProvider : EncryptionProvider 
+    public class DefaultEncryptionProvider : EncryptionProvider
     {
         private const int passwordIterations = 2;                // can be any number
         private const string initVector = "t$XYtfBQMCTAoOLG";    // must be 16 bytes
@@ -46,17 +51,13 @@ namespace Silvtek.ORMEngine.Encryption
             // Generate encryptor from the existing key bytes and initialization 
             // vector. Key size will be defined based on the number of the key 
             // bytes.
-            ICryptoTransform encryptor = symmetricKey.CreateEncryptor(
-                keyBytes,
-                initVectorBytes);
+            ICryptoTransform encryptor = symmetricKey.CreateEncryptor(keyBytes, initVectorBytes);
 
             // Define memory stream which will be used to hold encrypted data.
             MemoryStream memoryStream = new MemoryStream();
 
             // Define cryptographic stream (always use Write mode for encryption).
-            CryptoStream cryptoStream = new CryptoStream(memoryStream,
-                                                         encryptor,
-                                                         CryptoStreamMode.Write);
+            CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write);
             // Start encrypting.
             cryptoStream.Write(plainTextBytes, 0, plainTextBytes.Length);
 
@@ -100,17 +101,13 @@ namespace Silvtek.ORMEngine.Encryption
             // Generate decryptor from the existing key bytes and initialization 
             // vector. Key size will be defined based on the number of the key 
             // bytes.
-            ICryptoTransform decryptor = symmetricKey.CreateDecryptor(
-                keyBytes,
-                initVectorBytes);
+            ICryptoTransform decryptor = symmetricKey.CreateDecryptor(keyBytes, initVectorBytes);
 
             // Define memory stream which will be used to hold encrypted data.
             MemoryStream memoryStream = new MemoryStream(cipherTextBytes);
 
             // Define cryptographic stream (always use Read mode for encryption).
-            CryptoStream cryptoStream = new CryptoStream(memoryStream,
-                                                          decryptor,
-                                                          CryptoStreamMode.Read);
+            CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read);
 
             // Since at this point we don't know what the size of decrypted data
             // will be, allocate the buffer long enough to hold ciphertext;
@@ -118,9 +115,7 @@ namespace Silvtek.ORMEngine.Encryption
             byte[] plainTextBytes = new byte[cipherTextBytes.Length];
 
             // Start decrypting.
-            int decryptedByteCount = cryptoStream.Read(plainTextBytes,
-                                                       0,
-                                                       plainTextBytes.Length);
+            int decryptedByteCount = cryptoStream.Read(plainTextBytes, 0, plainTextBytes.Length);
 
             // Close both streams.
             memoryStream.Close();
@@ -128,12 +123,65 @@ namespace Silvtek.ORMEngine.Encryption
 
             // Convert decrypted data into a string. 
             // Let us assume that the original plaintext string was UTF8-encoded.
-            string plainText = Encoding.ASCII.GetString(plainTextBytes,
-                                                       0,
-                                                       decryptedByteCount);
+            string plainText = Encoding.ASCII.GetString(plainTextBytes, 0, decryptedByteCount);
 
             // Return decrypted string.   
             return plainText;
+        }
+
+        public override void EncryptStream(Stream inputStream, Stream encryptedStream)
+        {
+            ValidateSalt(Salt);
+
+            byte[] keyBytes = GetKeyBytes();
+
+            // Create uninitialized Rijndael encryption object.
+            RijndaelManaged symmetricKey = new RijndaelManaged();
+
+            // It is reasonable to set encryption mode to Cipher Block Chaining
+            // (CBC). Use default options for other symmetric key parameters.
+            symmetricKey.Mode = CipherMode.CBC;
+
+            // Generate encryptor from the existing key bytes and initialization 
+            // vector. Key size will be defined based on the number of the key 
+            // bytes.
+            ICryptoTransform encryptor = symmetricKey.CreateEncryptor(keyBytes, initVectorBytes);
+
+            // Define cryptographic stream (always use Write mode for encryption).
+            CryptoStream cryptoStream = new CryptoStream(inputStream, encryptor, CryptoStreamMode.Write);
+            // Start encrypting.
+
+            Utility.CopyStream(cryptoStream, encryptedStream, ORMConfigurator.BufferSize, true);
+
+            // Finish encrypting.
+            cryptoStream.FlushFinalBlock();
+            cryptoStream.Close();
+
+        }
+
+        public override void DecryptStream(Stream encryptedStream, Stream decryptedStream)
+        {
+            ValidateSalt(Salt);
+            byte[] keyBytes = GetKeyBytes();
+
+            // Create uninitialized Rijndael encryption object.
+            RijndaelManaged symmetricKey = new RijndaelManaged();
+
+            // It is reasonable to set encryption mode to Cipher Block Chaining
+            // (CBC). Use default options for other symmetric key parameters.
+            symmetricKey.Mode = CipherMode.CBC;
+
+            // Generate decryptor from the existing key bytes and initialization 
+            // vector. Key size will be defined based on the number of the key 
+            // bytes.
+            ICryptoTransform decryptor = symmetricKey.CreateDecryptor(keyBytes, initVectorBytes);
+
+            // Define cryptographic stream (always use Read mode for encryption).
+            CryptoStream cryptoStream = new CryptoStream(encryptedStream, decryptor, CryptoStreamMode.Read);
+
+            Utility.CopyStream(cryptoStream, decryptedStream, ORMConfigurator.BufferSize, true);
+
+            cryptoStream.Close();
         }
 
         private byte[] GetSaltAsBytes()
@@ -163,7 +211,7 @@ namespace Silvtek.ORMEngine.Encryption
             // salt value. The password will be created using the specified hash 
             // algorithm. Password creation can be done in several iterations.
 
-           
+
 #if NET11
             PasswordDeriveBytes passwordDeriveBytes = new PasswordDeriveBytes(Password, saltBytes, hashName, passwordIterations);
             byte[] keyBytes = passwordDeriveBytes.GetBytes(keySize / 8);
@@ -174,16 +222,16 @@ namespace Silvtek.ORMEngine.Encryption
             // Use the password to generate pseudo-random bytes for the encryption
             // key. Specify the size of the key in bytes (instead of bits).
             byte[] keyBytes = rfc2898DeriveBytes.GetBytes(keySize / 8);
-#endif 
+#endif
             return keyBytes;
         }
 
         private static void ValidateSalt(string salt)
         {
-           if (salt == null || salt.Length < 8)
-           {
-               throw new CryptographicException("invalid salt string. Salt must be 8 character or greater.");
-           }
+            if (salt == null || salt.Length < 8)
+            {
+                throw new CryptographicException("invalid salt string. Salt must be 8 character or greater.");
+            }
         }
     }
 }

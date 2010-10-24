@@ -15,7 +15,7 @@ namespace Silvtek.ORMEngine.ObjectPooling
 {
     internal class InternalPool
     {
-        private delegate void ObjectCreation(int numberOfObjs);
+        private delegate void ObjectCreation();
 
         private readonly int minInstances;
         private readonly int maxInstances;
@@ -35,13 +35,14 @@ namespace Silvtek.ORMEngine.ObjectPooling
             this.maxInstances = maxInstances;
             newObjects = ArrayList.Synchronized(new ArrayList());
             queue = Queue.Synchronized(new Queue());
-            CreateObjects(maxInstances);
+          
+            CreateObjects();
         }
 
         private void OnLowCountEvent(object sender, EventArgs e)
         {
-            int diff = maxInstances - queue.Count;
-            CreateObjects(diff);
+          //  int diff = maxInstances - queue.Count;
+            CreateObjects();
         }
 
         internal object GetObject()
@@ -52,25 +53,39 @@ namespace Silvtek.ORMEngine.ObjectPooling
                 return Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null, null);
             }
 
+
+
+            object obj  = null;
+            try
+            {
+                obj = queue.Dequeue();
+            }
+            catch (InvalidOperationException)
+            {
+                
+                obj = Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null, null);
+            }
+
             if (queue.Count <= minInstances)
             {
                 // fire event!
-                if (OnLowCount != null)OnLowCount(this, EventArgs.Empty);
+                if (OnLowCount != null) OnLowCount(this, EventArgs.Empty);
             }
 
-            return queue.Dequeue();
+            return obj;
         }
 
-        private void CreateObjects(int number)
+        private void CreateObjects()
         {
             ObjectCreation objCreation = new ObjectCreation(AsynchCreateObjects);
-            objCreation.BeginInvoke(number, ObjectCreationCompleted, null);
+            objCreation.BeginInvoke(ObjectCreationCompleted, null);
         }
 
-        private void AsynchCreateObjects(int numberOfObjs)
+        private void AsynchCreateObjects()
         {
             lock (newObjects.SyncRoot)
             {
+                int numberOfObjs = maxInstances - queue.Count;
                 int exceptions = 0;
                 for (int i = 0; i < numberOfObjs; i++)
                 {
