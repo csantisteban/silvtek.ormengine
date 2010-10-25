@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.Remoting.Messaging;
 using System.Runtime.Serialization;
 using System.Reflection;
@@ -1174,7 +1175,7 @@ namespace Silvtek.ORMEngine
                 }
                 if (comparisonResult == DigestComparisonResult.EmptyDigest)
                 {
-                    string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 2);
+                    MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 2);
                     //recordDigest = MapUtility.GetDigest(fulldigestValue);
                     recordVersion = new RecordVersion(GetRecordIdentifier(), 2);
                 }
@@ -1383,6 +1384,7 @@ namespace Silvtek.ORMEngine
 
             return digest;
         }
+
 
        #region Overrided Object methods
 
@@ -1684,6 +1686,99 @@ namespace Silvtek.ORMEngine
             return recordVersion;    
         }
 
+        public void PersistToFile(string path)
+        {
+            PersistentRecord record = new PersistentRecord(this);
+            ORMSerializer.SerializeToFile(path, record);
+        }
+
+        public void LoadFromFile(string path)
+        {
+            if (this.ObjectInfo.BindingStatus == BindingStatus.Bound)
+            {
+                throw new InvalidOperationException("Already bounded object. Can't load from a file to an bounded object. Create a new instance.");
+            }
+
+
+            // Fires before load event.
+            FireBeforeLoaded();
+
+            PersistentRecord record = (PersistentRecord)ORMSerializer.DeserializeFromFile(path);
+
+            MapMemberList memberList = objectInfo.MappedMembers;
+            for (int i = 0; i < memberList.Count; i++)
+            {
+                object value = record[memberList[i].MemberName];
+                memberList[i].SetMemberValue(this.SourceObject, value);
+
+                if (memberList[i].Properties.DataType != DataType.Binary)
+                {
+                    memberList[i].SetDataSourceValue(SourceObject, value);
+
+                    if (memberList[i].Properties.IsRecordDigestEnabled)
+                    {
+                        string fullDigestString = Convert.ToString(value);
+                        int version = MapUtility.GetRecordVersion(fullDigestString);
+                        //recordDigest = MapUtility.GetDigest(fullDigestString);
+                        recordVersion = new RecordVersion(GetRecordIdentifier(), version);
+                    }
+                }
+                else
+                {
+                    DataStream dataStream = new DataStream(memberList[i]);
+
+                    DataStream stream = null;
+                    if (value is byte[])
+                    {
+                         stream = new DataStream((byte[])value);
+                    }
+                    else if(value is Stream)
+                    {
+                        stream = new DataStream((Stream)value);
+                    }
+                    else
+                    {
+                        memberList[i].SetDataSourceValue(SourceObject, null);
+                        continue;
+                    }
+
+                    Byte[] buffer = new byte[ORMConfigurator.BufferSize];
+       
+                    long bytesRead;
+                    int startIndex = 0;
+                    do
+                    {
+                        bytesRead = stream.Read(buffer, startIndex, buffer.Length);
+                        if (bytesRead == 0) break;
+                        dataStream.Write(buffer, 0, (int) bytesRead);
+                        dataStream.Flush();
+                        startIndex += buffer.Length;
+                    } while (buffer.Length == bytesRead);
+
+                    dataStream.Position = 0;
+
+                    memberList[i].SetDataSourceValue(SourceObject, dataStream);
+                }
+
+
+            }
+
+
+
+            FieldList.RefreshObjectSource();
+            FieldList.CommitChanges();
+
+            result = ActionResult.Succeed;
+            objectInfo.SetBindStatus(BindingStatus.Bound);
+
+            // Notify Load Operation.
+            NotifyOperation(Action.Load);
+
+            // Fire After Load Event.
+            Bind(true);
+            FireAfterLoaded();
+                
+        }
 
 		#region -- Serialization constructor and methods --
 
@@ -1859,6 +1954,8 @@ namespace Silvtek.ORMEngine
            result = doresult;
         }
 
+
+       
         /// <summary>
         /// Fire the <see cref="BeforeCreated" /> event.
         /// </summary>

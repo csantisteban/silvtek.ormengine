@@ -95,6 +95,7 @@
     <Compile Include="IDataObject.cs" />
     <Compile Include="InternalAfterOperationDelegate.cs" />
     <Compile Include="MemberAttributes.cs" />
+    <Compile Include="NameValueItem.cs" />
     <Compile Include="ObjectFormatterProviderAttribute.cs" />
     <Compile Include="Data\ConnectionInfoList.cs" />
     <Compile Include="EncryptAttribute.cs" />
@@ -124,6 +125,7 @@
     <Compile Include="ORMObjectProxy.cs" />
     <Compile Include="ORMSerializer.cs" />
     <Compile Include="DataStream.cs" />
+    <Compile Include="PersistentRecord.cs" />
     <Compile Include="PreserveAttribute.cs" />
     <Compile Include="Data\ConnectionSettingsBase.cs" />
     <Compile Include="Data\DefaultConnectionSettings.cs" />

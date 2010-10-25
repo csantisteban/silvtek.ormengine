@@ -55,7 +55,7 @@ namespace Silvtek.ORMEngine.Schema
         }
 
         ///<summary>
-        /// Gets the old value.
+        /// Gets the actual value.
         ///</summary>
         internal object ActualValue
         {
@@ -148,6 +148,10 @@ namespace Silvtek.ORMEngine.Schema
             }
         }
 
+        internal MapMember MapMember
+        {
+            get { return mapMember; }
+        }
 
 
         /// <summary>

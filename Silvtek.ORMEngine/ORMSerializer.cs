@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security;
 using System.Text;
 using System.Xml;
 using Silvtek.ORMEngine.Schema;
@@ -119,19 +121,6 @@ namespace Silvtek.ORMEngine
 
             writer.WriteEndElement();
 
-          //  byte[] bytes = Serialize(obj.SourceObject);
-         //   writer.WriteStartElement("Binary");
-         //   writer.WriteAttributeString("type", obj.SourceObject.GetType().FullName);
-         //   writer.WriteAttributeString("bytes", bytes.Length.ToString());
-
-#if NET11
-        //    string base64 = Convert.ToBase64String(bytes, 0, bytes.Length);
-#else
-        //    string base64 = Convert.ToBase64String(bytes, 0, bytes.Length, Base64FormattingOptions.InsertLineBreaks);
-#endif
-        //    writer.WriteRaw(base64);
-        //    writer.WriteEndElement();
-
             writer.WriteEndElement();
 
             writer.WriteEndDocument();
@@ -164,6 +153,11 @@ namespace Silvtek.ORMEngine
             return bytes;
         }
 
+        /// <summary>
+        /// Deserializes the specified bytes.
+        /// </summary>
+        /// <param name="bytes">The bytes.</param>
+        /// <returns></returns>
         public static object Deserialize(byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)
@@ -181,5 +175,164 @@ namespace Silvtek.ORMEngine
 
             return obj;
         }
+
+        /// <summary>
+        ///   Serialize object to a file.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="formatter"></param>
+        /// <param name="obj"></param>
+        /// <exception cref="SerializationException">
+        ///  An error has occurred during serialization, such as if an object in the graph parameter is not marked as serializable.
+        /// </exception>
+        /// <exception cref="SerializationException">
+        ///  When it fails to create a stream for the provide file name.
+        /// </exception>
+        /// <exception cref="SecurityException">
+        ///  The caller does not have the required permission.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///  The file name is null or an empty string.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///   The formatter is null.
+        /// </exception>
+        public static void SerializeToFile(string file, IFormatter formatter, object obj)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new ArgumentException("file name cannot be null or empty string", "file");
+            }
+
+            if (formatter == null)
+            {
+                throw new ArgumentNullException("formatter", "formatter must be an instance of an object");
+            }
+
+
+            Stream stream = null;
+            try
+            {
+                stream = new FileStream(file, FileMode.Create, FileAccess.ReadWrite);
+                formatter.Serialize(stream, obj);
+                stream.Flush();
+            }
+            catch (ArgumentNullException e)
+            {
+                throw new SerializationException("Failed to create an stream handle for the file '" + file + "'", e);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                if (stream != null) stream.Close();
+            }
+
+        }
+
+ 
+        /// <summary>
+        ///   Serialize object to a file using the <cref="BinaryFormatter" />.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="formatter"></param>
+        /// <param name="obj"></param>
+        /// <exception cref="SerializationException">
+        ///  An error has occurred during serialization, such as if an object in the graph parameter is not marked as serializable.
+        /// </exception>
+        /// <exception cref="SerializationException">
+        ///  When it fails to create a stream for the provide file name.
+        /// </exception>
+        /// <exception cref="SecurityException">
+        ///  The caller does not have the required permission.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///  The file name is null or an empty string.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///   The formatter is null.
+        /// </exception>
+        public static void SerializeToFile(string file, object obj)
+        {
+            BinaryFormatter binary = new BinaryFormatter();
+            SerializeToFile(file, binary, obj);
+        }
+
+        /// <summary>
+        /// Deserialize an object from a file.
+        /// </summary>
+        /// <param name="file">File full path.</param>
+        /// <param name="formatter">The formatter.</param>
+        /// <returns>The object.</returns>
+        /// <exception cref="SerializationException">
+        ///  When it fails to create a stream for the provide file name.
+        /// </exception>
+        /// <exception cref="SerializationException">
+        ///  The serializationStream supports seeking, but its length is 0.
+        /// </exception>
+        /// <exception cref="SecurityException">
+        ///  The caller does not have the required permission.
+        /// </exception>
+        public static object DeserializeFromFile(string file, IFormatter formatter)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new ArgumentException("file name cannot be null or empty string", "file");
+            }
+
+            if (formatter == null)
+            {
+                throw new ArgumentNullException("formatter", "formatter must be an instance of an object");
+            }
+
+            if (!File.Exists(file)) return null;
+
+            Stream stream = null;
+            object obj = null;
+            try
+            {
+                stream = new FileStream(file, FileMode.Open, FileAccess.Read);
+                obj = formatter.Deserialize(stream);
+
+            }
+            catch (ArgumentNullException e)
+            {
+                throw new SerializationException("Failed to create an stream from the file '" + file + "'", e);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                if (stream != null) stream.Close();
+            }
+
+            return obj;
+        }
+
+        /// <summary>
+        /// Deserialize an object from a file using the <see cref="BinaryFormatter" />.
+        /// </summary>
+        /// <param name="file">File full path.</param>
+        /// <param name="formatter">The formatter.</param>
+        /// <returns>The object.</returns>
+        /// <exception cref="SerializationException">
+        ///  When it fails to create a stream for the provide file name.
+        /// </exception>
+        /// <exception cref="SerializationException">
+        ///  The serializationStream supports seeking, but its length is 0.
+        /// </exception>
+        /// <exception cref="SecurityException">
+        ///  The caller does not have the required permission.
+        /// </exception>
+        public static object DeserializeFromFile(string file)
+        {
+            BinaryFormatter binary = new BinaryFormatter();
+            return DeserializeFromFile(file, binary);
+        }
+
     }
 }
