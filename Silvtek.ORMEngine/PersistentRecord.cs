@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Runtime.Serialization;
-using System.Text;
 using Silvtek.ORMEngine.Schema;
 
 namespace Silvtek.ORMEngine
