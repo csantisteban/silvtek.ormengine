@@ -10,10 +10,13 @@ namespace Silvtek.ORMEngine
     /// <summary>
     /// Represents a data stream
     /// </summary>
+     [Serializable]
     public class DataStream : Stream, IDisposable 
     {
 
         private Stream backbone = null;
+
+
         private readonly string backBoneFile;
         private readonly MapMember mapMember;
         private string streamHash;

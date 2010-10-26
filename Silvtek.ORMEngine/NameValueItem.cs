@@ -1,8 +1,11 @@
-﻿namespace Silvtek.ORMEngine
+﻿using System;
+
+namespace Silvtek.ORMEngine
 {
     /// <summary>
     /// 
     /// </summary>
+    [Serializable]
     internal class NameValueItem
     {
         private string name;
