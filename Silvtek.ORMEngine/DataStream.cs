@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.Serialization;
 using System.Text;
 using System.IO;
 using Silvtek.ORMEngine.Configs;
@@ -11,7 +12,7 @@ namespace Silvtek.ORMEngine
     /// Represents a data stream
     /// </summary>
      [Serializable]
-    public class DataStream : Stream, IDisposable 
+    public class DataStream : Stream, IDisposable, ISerializable 
     {
 
         private Stream backbone = null;
@@ -567,6 +568,16 @@ namespace Silvtek.ORMEngine
                     Trace.Write("failed to remove file for DataStream. (Dispose Method). "+ex.Message);
                 }
             }
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("stream", backbone, typeof(Stream));
+        }
+
+        public DataStream(SerializationInfo info, StreamingContext context)
+        {
+            backbone = (Stream) info.GetValue("stream", typeof (Stream));
         }
     }
 }

@@ -1,3 +1,5 @@
+using System.Xml.Serialization;
+
 namespace Silvtek.ORMEngine
 {
     public interface IORMObject
@@ -5,6 +7,8 @@ namespace Silvtek.ORMEngine
         /// <summary>
         /// Tells whether this object has been loaded 
         /// </summary>
+        [SoapIgnore]
+        [XmlIgnore]
         bool IsLoaded { get; set;}
     }
 }

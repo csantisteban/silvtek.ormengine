@@ -1,9 +1,13 @@
 using System;
 using System.IO;
+#if !NET11
+using System.IO.Compression;
+#endif
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
+using Silvtek.ORMEngine.Configs;
 
 namespace Silvtek.ORMEngine
 {
@@ -322,6 +326,7 @@ namespace Silvtek.ORMEngine
             return sourceBytes;
         }
 
+
         /// <summary>
         /// Copy one stream to another
         /// </summary>
@@ -359,7 +364,71 @@ namespace Silvtek.ORMEngine
             }
         }
 
-
         
+#if !NET11
+        internal static Stream Decompress(Stream sourceStream)
+        {
+            string filename = String.Format("{0:n}.stream", Guid.NewGuid());
+            string tmpFile = Path.Combine(ORMConfigurator.TemporaryFolder, filename);
+
+            // now, create stream for compression;
+
+            using (Stream destStream = new FileStream(tmpFile, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, ORMConfigurator.BufferSize,
+                                               FileOptions.SequentialScan | FileOptions.DeleteOnClose))
+            {
+
+                using (Stream zipStream = new GZipStream(sourceStream, CompressionMode.Decompress, false))
+                {
+                    // now, copy source stream to destStream
+                    byte[] buffer = new byte[ORMConfigurator.BufferSize];
+
+                    int bytesRead;
+                    while ((bytesRead = zipStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        destStream.Write(buffer, 0, bytesRead);
+                        destStream.Flush();
+                    }
+
+                    zipStream.Close();
+                }
+
+                destStream.Close();
+            }
+
+            return new FileStream(tmpFile, FileMode.Open, FileAccess.Read, FileShare.Read, ORMConfigurator.BufferSize,
+                                  FileOptions.SequentialScan);
+
+        }
+
+        internal static Stream Compress(Stream sourceStream, string filename)
+        {
+           // string filename = String.Format("{0:n}.stream", Guid.NewGuid());
+            string tmpFile = Path.Combine(ORMConfigurator.TemporaryFolder, filename);
+
+            // now, create stream for compression;
+
+            using (Stream destStream = new FileStream(tmpFile, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, ORMConfigurator.BufferSize,
+                                               FileOptions.SequentialScan))
+            {
+
+                using (Stream zipStream = new GZipStream(destStream, CompressionMode.Compress, false))
+                {
+                    // now, copy source stream to destStream
+                    byte[] buffer = new byte[ORMConfigurator.BufferSize];
+
+                    int bytesRead;
+                    while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        zipStream.Write(buffer, 0, bytesRead);
+                        zipStream.Flush();
+                    }
+                }
+            }
+
+            return new FileStream(tmpFile, FileMode.Open, FileAccess.Read, FileShare.Read, ORMConfigurator.BufferSize,
+                                  FileOptions.SequentialScan);
+
+        }
+#endif   
     }
 }

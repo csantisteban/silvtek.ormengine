@@ -10,6 +10,7 @@ using System.IO;
 using System.Runtime.Remoting.Messaging;
 using System.Runtime.Serialization;
 using System.Reflection;
+using System.Xml.Serialization;
 using Silvtek.ORMEngine.Configs;
 using Silvtek.ORMEngine.DataQuery;
 using Silvtek.ORMEngine.Schema;
@@ -1689,7 +1690,8 @@ namespace Silvtek.ORMEngine
         public void PersistToFile(string path)
         {
             PersistentRecord record = new PersistentRecord(this);
-            ORMSerializer.SerializeToFile(path, record);
+            record.Persist(path);
+          
         }
 
         public void LoadFromFile(string path)
@@ -2312,6 +2314,8 @@ namespace Silvtek.ORMEngine
         }
         #endregion
 
+        [SoapIgnore]
+        [XmlIgnore]
 	    public bool IsLoaded
 	    {
             get { return isLoaded; }
