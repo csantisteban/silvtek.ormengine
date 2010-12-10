@@ -487,6 +487,13 @@ namespace Silvtek.ORMEngine.Schema
             if ((!Properties.AcceptNulls && originalValue == null) ||
                 (!Properties.AcceptNulls && originalValue != null && Properties.DataType == DataType.String && ((string)originalValue).Length == 0))
             {
+                // if the current value suppose to be a record digest, then do not throw an error if value does not exists; default to empty string.
+                if (Properties.IsRecordDigestEnabled)
+                {
+                    originalValue = String.Empty;
+                    return originalValue;
+                }
+
                 if (!Properties.DefaultDefined)
                 {
                     string typeFullName = source.GetType().FullName;
