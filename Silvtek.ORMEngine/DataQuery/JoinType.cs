@@ -3,14 +3,11 @@
 // See LICENSE in the repository root.
 #endregion
 
-using System;
-
 namespace Silvtek.ORMEngine.DataQuery
 {
         ///<summary>
         /// Defines the join type.
         ///</summary>
-        ///<remarks>
 		public enum JoinType
         {
            ///<summary>

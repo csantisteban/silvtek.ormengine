@@ -2071,7 +2071,7 @@ namespace Silvtek.ORMEngine
         }
 
         /// <summary>
-        /// Fire the <see cref="AfterStored" /> event.
+        /// Fire the <see cref="AfterSaved" /> event.
         /// </summary>
         protected void FireAfterSaved()
         {

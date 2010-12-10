@@ -276,9 +276,6 @@ namespace Silvtek.ORMEngine.Data
         /// <see cref="ConnectionString" /> property of the provider-specific
         /// Connection object.
         ///</summary>
-        ///<exception cref="DbDataException" >
-        /// If cannot open a connection with the database.
-        ///</exception>
         public virtual void Open()
         {
             if (connectionInfo == null)

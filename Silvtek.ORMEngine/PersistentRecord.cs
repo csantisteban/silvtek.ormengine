@@ -16,10 +16,10 @@ namespace Silvtek.ORMEngine
         private readonly string hash;
        
         private readonly ORMObject obj;
-        private Hashtable values;
+        private readonly Hashtable values;
         private string path;
 
-        private string digestValue;
+        private readonly string digestValue;
 
         internal object this[string name]
         {

@@ -21,7 +21,7 @@ namespace Silvtek.ORMEngine.Data
 		#region IDataParameterCollection Members
 
 		///<summary>
-		/// Gets the <see cref="pIDataParameter" /> object by parameter Name.
+        /// Gets the <see cref="DataParameter" /> object by parameter Name.
 		/// </summary>
 		object IDataParameterCollection.this[string parameterName]
 		{
@@ -30,7 +30,7 @@ namespace Silvtek.ORMEngine.Data
 		}
 
 		///<summary>
-		/// Gets the <see cref="IDataParamenter" /> object by its index in the collection.
+        /// Gets the <see cref="IDataParameter" /> object by its index in the collection.
 		///</summary>
 		public IDataParameter this[int index]
 		{

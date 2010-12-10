@@ -234,10 +234,9 @@ namespace Silvtek.ORMEngine
 
  
         /// <summary>
-        ///   Serialize object to a file using the <cref="BinaryFormatter" />.
+        ///   Serialize object to a file using the BinaryFormatter
         /// </summary>
         /// <param name="file"></param>
-        /// <param name="formatter"></param>
         /// <param name="obj"></param>
         /// <exception cref="SerializationException">
         ///  An error has occurred during serialization, such as if an object in the graph parameter is not marked as serializable.
@@ -316,8 +315,6 @@ namespace Silvtek.ORMEngine
         /// <summary>
         /// Deserialize an object from a file using the <see cref="BinaryFormatter" />.
         /// </summary>
-        /// <param name="file">File full path.</param>
-        /// <param name="formatter">The formatter.</param>
         /// <returns>The object.</returns>
         /// <exception cref="SerializationException">
         ///  When it fails to create a stream for the provide file name.

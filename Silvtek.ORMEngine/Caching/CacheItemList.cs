@@ -27,7 +27,7 @@ namespace Silvtek.ORMEngine.Caching
 		/// Check if the collection contains an specific key.
 		/// </summary>
 		/// <param name="key">The string to be tested</param>
-		/// <returns><see lang="true" /> if it contains; otherwise <see cref=false" /></returns>
+		/// <returns><see lang="true" /> if it contains; otherwise false</returns>
 		internal bool Contains(string key)
 		{
 			return (Get(key) != null);

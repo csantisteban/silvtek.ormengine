@@ -3,6 +3,7 @@
 // See LICENSE in the repository root.
 #endregion
 
+using System;
 using System.Collections;
 using System.Reflection;
 using System.Diagnostics;
@@ -181,7 +182,7 @@ namespace Silvtek.ORMEngine.Schema
        
 
         /// <summary>
-        /// Finds a <see cref="MapMember" /> by the name. This method makes a case sensitive search.
+        /// Finds a <see cref="MapMember" /> by the name. 
         /// </summary>
         /// <param name="memberName">Member name.</param>
         /// <returns></returns>
@@ -191,7 +192,7 @@ namespace Silvtek.ORMEngine.Schema
             MapMember map = (MapMember)BaseGet(memberName);
             if (map == null)
             {
-                map = FindCaseInsensitive(memberName);
+                map = InternalFindCaseInsensitive(memberName);
 
                 if (map == null)
                 {
@@ -200,15 +201,29 @@ namespace Silvtek.ORMEngine.Schema
                 }
             }
 
+            if (map == null)
+            {
+                map = FindByColumnName(memberName);
+            }
 
             return map;
         }
+
+        private MapMember InternalFindCaseInsensitive(string memberName)
+        {
+            if (memberName == null) return null;
+            string tmpMember = insensitiveCaseMemberMapping[memberName.ToLower()];
+            if (tmpMember == null || tmpMember.Length == 0) return null;
+            return Find(tmpMember);
+        }
+
 
         /// <summary>
         /// Finds a <see cref="MapMember" /> by the name. This method makes a case insensitive search.
         /// </summary>
         /// <param name="memberName">Member name.</param>
         /// <returns></returns>
+        [Obsolete("Please use Find() instead.")]
         public MapMember FindCaseInsensitive(string memberName)
         {
             if (memberName == null) return null;
@@ -217,6 +232,11 @@ namespace Silvtek.ORMEngine.Schema
             return Find(tmpMember);
         }
 
+        /// <summary>
+        /// Finds the name of the by column.
+        /// </summary>
+        /// <param name="columnName">Name of the column.</param>
+        /// <returns></returns>
         internal MapMember FindByColumnName(string columnName)
         {
             return (MapMember)columnMapping[columnName];

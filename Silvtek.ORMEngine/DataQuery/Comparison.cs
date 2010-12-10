@@ -25,7 +25,7 @@ namespace Silvtek.ORMEngine.DataQuery
       Equal = 110,
 
       ///<summary>
-      /// Defines the SQL operator <c> &gt;&lt </c> to be used in the criteria.
+      /// Defines the SQL operator <c> &gt;&lt; </c> to be used in the criteria.
       ///</summary>
       NotEqual = 111,
 

@@ -23,20 +23,12 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
 		// HAVING CRITERIA TEMPLATE
         internal const string HAVING_TEMPLATE = "having {criteria}";
 		
-		#region -- Member variables --
-
-        //private Joins joins;
-        //private Criterias criterias;
-        //private Criterias havings;
-        //private QueriedTypes types;
-        //private QueriedAggregates aggregates;
-        //private OrderColumns orderColumns;
-        //private bool isCaseSensitive;
-        //private bool isDistinct;
         private readonly QueryBase query;
 
-		#endregion
-
+        /// <summary>
+        /// Gets the query.
+        /// </summary>
+        /// <value>The query.</value>
         internal QueryBase Query
         {
             get { return query; }
@@ -57,14 +49,6 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
 		protected internal QueryParser(QueryBase query)
 		{
             this.query = query;
-            //this.aggregates = query.QueriedAggregates;
-            //this.joins = query.Joins;
-            //this.criterias = query.Criterias;
-            //this.havings = query.Aggregates;
-            //this.types = query.Types;
-            //this.orderColumns = query.OrderProperties;
-            //this.isCaseSensitive = query.IsQueryCaseSensitive;
-            //this.isDistinct = query.Distinct;
 		}
 		
 		
@@ -112,6 +96,10 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
 			return sqlTemplate.ToString();
 		}
 
+        /// <summary>
+        /// Gets the where clause.
+        /// </summary>
+        /// <returns></returns>
 		protected string GetWhereClause()
 		{
             string result = String.Empty;
@@ -127,6 +115,10 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
             return result;
 		}
 
+        /// <summary>
+        /// Gets the having clause.
+        /// </summary>
+        /// <returns></returns>
         protected string GetHavingClause()
 		{
             string result = String.Empty;

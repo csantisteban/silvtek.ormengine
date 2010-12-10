@@ -77,6 +77,8 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
             return Add(objectInfo);
         }
 
+
+
 		public string GetSql()
 		{
 			

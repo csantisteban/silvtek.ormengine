@@ -20,8 +20,8 @@ namespace Silvtek.ORMEngine.DataQuery
         /// <summary>
         /// Initializes a new instance of the <see cref="SPQuery"/> class.
         /// </summary>
-        /// <param name="type">The type.</param>
-        /// <param name="storedprocedure">The storedprocedure.</param>
+        /// <param name="storedprocedure">The type.</param>
+        /// <param name="connectionName">The connection name.</param>
         public SPQuery(string storedprocedure, string connectionName)
         {
             this.storedprocedure = storedprocedure;
@@ -57,6 +57,7 @@ namespace Silvtek.ORMEngine.DataQuery
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         /// <param name="dbtype">The dbtype.</param>
+        /// <param name="length"></param>
         public void AppendParameter(string name, object value, DbType dbtype, int length)
         {
             parameterIdentifiers.Add(String.Format("{0}:{1}", name, value));

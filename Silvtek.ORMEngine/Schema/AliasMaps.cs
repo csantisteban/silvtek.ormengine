@@ -8,6 +8,9 @@ using System.Diagnostics;
 
 namespace Silvtek.ORMEngine.Schema
 {
+    /// <summary>
+    /// Maps custom alias to a specific instance member
+    /// </summary>
     internal class AliasMaps : StringDictionary
     {
         internal AliasMaps()
@@ -31,7 +34,7 @@ namespace Silvtek.ORMEngine.Schema
 
             if (base.ContainsKey(queryName)) return;
 
-            Debug.WriteLine("Add query alias "+queryName+" for member name: "+memberName);
+            //Debug.WriteLine("Add query alias "+queryName+" for member name: "+memberName);
             base.Add(queryName, memberName);
         }
 

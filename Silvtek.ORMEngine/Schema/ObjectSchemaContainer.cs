@@ -21,6 +21,7 @@ namespace Silvtek.ORMEngine.Schema
 
         private static ObjectSchemaContainer container;     // Hold the unique instance of this class.
         private readonly Hashtable listholder;               // hold the ObjectSchemaInfo
+
         private readonly object mutex;
 
 
@@ -32,12 +33,15 @@ namespace Silvtek.ORMEngine.Schema
         /// The number of <see cref="ObjectSchemaInfo" /> that this instance
         /// is holding.
         ///</value>
-        public int Count
+        internal int Count
         {
             get {return listholder.Count;}
         }
 
-             
+            
+ 
+
+
         ///<summary>
         /// Returns a <see cref="ObjectSchemaInfo" /> from the pool.
         ///</summary>
@@ -48,12 +52,17 @@ namespace Silvtek.ORMEngine.Schema
         /// A <see cref="ObjectSchemaInfo" />
         ///</returns>
         ///<seealso cref="Retrieve" />
-        public ObjectSchemaInfo Retrieve(Type type)
+        internal ObjectSchemaInfo Retrieve(Type type)
         {
+            if (type == null)
+            {
+                return null;
+            }
+
             string typeFullName = type.FullName;
+            if (typeFullName == null) return null;
 
             ObjectSchemaInfo info = null;
-
             try
             {
                 if (listholder.Contains(typeFullName))
@@ -89,7 +98,7 @@ namespace Silvtek.ORMEngine.Schema
 	    /// <summary>
 		/// Returns the unique instance of this object.
 		/// </summary>
-		public static ObjectSchemaContainer Current
+        internal static ObjectSchemaContainer Current
 		{
 			get {return GetInstance();}
 		}

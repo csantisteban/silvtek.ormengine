@@ -858,7 +858,7 @@ namespace Silvtek.ORMEngine.Schema
         /// and convert <paramref name="value" /> to the column's type.
         ///</summary>
         ///<param name="member">
-        /// The <see cref="MappedMember" />
+        /// The <see cref="MapMember" />
         ///</param>
         ///<param name="value">
         /// The value to be converted.

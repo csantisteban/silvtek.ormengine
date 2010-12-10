@@ -15,8 +15,8 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
 	/// </summary>
 	internal class MultipleValuesCriteria : CriteriaParser
 	{
-		private const string TEMPLATE = "({col} {in} ({values}) ) ";
-		private ICollection collection;
+		private const string _TEMPLATE = "({col} {in} ({values}) ) ";
+		private readonly ICollection collection;
 
 		internal MultipleValuesCriteria(ObjectSchemaInfo objectInfo, string memberName,  ICollection collection) : base(objectInfo, memberName)
 		{
@@ -42,7 +42,7 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
 			string comparisonValue = this.GetComparisonString();
 			string values = GetCommaDelimitedValues();
 
-			StringBuffer stringBuffer = new StringBuffer(TEMPLATE);
+			StringBuffer stringBuffer = new StringBuffer(_TEMPLATE);
 			stringBuffer.SetTokenValue("col", columnName);
 			stringBuffer.SetTokenValue("in", comparisonValue);
 			stringBuffer.SetTokenValue("values", values);

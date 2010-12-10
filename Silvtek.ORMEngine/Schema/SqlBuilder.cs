@@ -18,6 +18,7 @@ namespace Silvtek.ORMEngine.Schema
     [Serializable]
     internal sealed class SqlBuilder
     {
+// ReSharper disable InconsistentNaming
         private const string DELETE_SQL = "delete from {table} " +
                                           "where {criteria}";
 
@@ -27,6 +28,7 @@ namespace Silvtek.ORMEngine.Schema
         private const string UPDATE_SQL = "update {table} " +
                                           "set {columnvalue} " +
                                           "where {criteria} ";
+ // ReSharper restore InconsistentNaming
 
        // private readonly string insertColumns;
         private readonly MapMemberList mappedMembers;

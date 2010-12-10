@@ -22,7 +22,7 @@ namespace Silvtek.ORMEngine.Caching
 	internal class ORMReferencesManager
 	{
 	
-        public static object mutex = new object();
+        //private static object _Mutex = new object();
 		[NonSerialized]
         private readonly ArrayList instances;
         private readonly string identifier;
@@ -65,6 +65,10 @@ namespace Silvtek.ORMEngine.Caching
 	        get { return type; }
 	    }
 
+        /// <summary>
+        /// Gets the sync root.
+        /// </summary>
+        /// <value>The sync root.</value>
 	    internal object SyncRoot
 	    {
 	        get { return syncRoot; }
@@ -219,7 +223,6 @@ namespace Silvtek.ORMEngine.Caching
 		        throw new InvalidOperationException("static reference for this record does not exists in the reference manager. Can't broadcast update");
 #endif
 
-		        return;
 		    }
 
             ArrayList references = new ArrayList(instances);
@@ -344,7 +347,7 @@ namespace Silvtek.ORMEngine.Caching
 	                }
 	                catch (Exception ex)
 	                {
-	                    Trace.WriteLine("Failed to broadcast record removal to an ORMObject");
+	                    Trace.WriteLine("Failed to broadcast record removal to an ORMObject. "+ex.ToString());
 
 	                }
 
