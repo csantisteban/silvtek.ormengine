@@ -92,7 +92,7 @@ namespace Silvtek.ORMEngine.Data
             this.dbtype = settings.DbTypeFormatter;
             this.provider = settings.ConnectionProvider;
             preparedStatement = false;
-            this.commandTimeout = commandTimeout;
+            this.commandTimeout = settings.CommandTimeout;
             stats = new ConnectionStats();
 
         }
