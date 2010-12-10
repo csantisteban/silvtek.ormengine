@@ -69,6 +69,12 @@ namespace Silvtek.ORMEngine.DataQuery
 			UpdateType(obj);
 		}
 
+        internal void AddRange(ResultColumn column)
+        {
+            if (column == null) return;
+            InnerList.AddRange(column.InnerList);
+        }
+
 		internal void UpdateType(object obj)
 		{
             // if is null, does not have a type, so exit.

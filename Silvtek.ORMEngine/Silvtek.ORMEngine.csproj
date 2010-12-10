@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Silvtek.ORMEngine</RootNamespace>
-    <AssemblyName>Silvtek.ORMEngine</AssemblyName>
+    <AssemblyName>Silvtek.ORMEngineV1.7</AssemblyName>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>
@@ -21,7 +21,7 @@
     </SccAuxPath>
     <SccProvider>
     </SccProvider>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
@@ -41,6 +41,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -49,23 +50,28 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;NET20</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <WarningLevel>3</WarningLevel>
     <RegisterForComInterop>false</RegisterForComInterop>
     <CodeAnalysisRules>
     </CodeAnalysisRules>
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>none</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;NET20</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;NET20</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>2</WarningLevel>
+    <WarningLevel>3</WarningLevel>
     <RegisterForComInterop>false</RegisterForComInterop>
-    <DocumentationFile>bin\Release\Silvtek.ORMEngine.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Silvtek.ORMEngineV1.7.xml</DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="nunit.framework, Version=2.5.5.10112, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>_prj.references\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -83,7 +89,10 @@
     <Compile Include="Compression\CompressionProvider.cs" />
     <Compile Include="Compression\DefaultCompressionProvider.cs" />
     <Compile Include="Configs\ORMConfigurator.cs" />
+    <Compile Include="DataQuery\CommandTypes.cs" />
+    <Compile Include="DataQuery\ParameterList.cs" />
     <Compile Include="DataQuery\Parsers\SingleValueQueryParser.cs" />
+    <Compile Include="DataQuery\CommandParameter.cs" />
     <Compile Include="DataQuery\SingleValueQuery.cs" />
     <Compile Include="DataQuery\SPObjectQuery.cs" />
     <Compile Include="DataQuery\SPQuery.cs" />
@@ -94,6 +103,9 @@
     <Compile Include="ExecuteBatchMode.cs" />
     <Compile Include="IDataObject.cs" />
     <Compile Include="InternalAfterOperationDelegate.cs" />
+    <Compile Include="IQueryContext.cs" />
+    <Compile Include="Linq\Query.cs" />
+    <Compile Include="Linq\QueryContext.cs" />
     <Compile Include="MemberAttributes.cs" />
     <Compile Include="NameValueItem.cs" />
     <Compile Include="ObjectFormatterProviderAttribute.cs" />
@@ -170,7 +182,7 @@
     <Compile Include="DataQuery\Parsers\SqlTextCriteria.cs" />
     <Compile Include="DataQuery\Parsers\SubQueryCriteria.cs" />
     <Compile Include="DataQuery\Parsers\TwoValuesCriteria.cs" />
-    <Compile Include="DataQuery\SqlText.cs" />
+    <Compile Include="DataQuery\CommandText.cs" />
     <Compile Include="DataType.cs" />
     <Compile Include="Data\Command.cs" />
     <Compile Include="Data\Connection.cs" />
@@ -229,6 +241,10 @@
     <Compile Include="Querying\SingleColumn.cs" />
     <Compile Include="Querying\SingleMemberList.cs" />
     <Compile Include="Querying\SqlText.cs" />
+    <Compile Include="DataQuery\QueryLanguage\InternalQLangParser.cs" />
+    <Compile Include="DataQuery\QueryLanguage\InternalQueryContext.cs" />
+    <Compile Include="DataQuery\QueryLanguage\QueryLanguageParserUtility.cs" />
+    <Compile Include="DataQuery\QueryLanguage\QueryType.cs" />
     <Compile Include="ReadOnlyException.cs" />
     <Compile Include="RecordDigestAttribute.cs" />
     <Compile Include="Resource.Designer.cs">
@@ -252,9 +268,9 @@
     <Compile Include="UniqueConstraintViolatedException.cs" />
     <Compile Include="XmlMapping\ObjectXmlSchemaException.cs" />
     <Compile Include="XmlMapping\ObjectXmlSchemaInfo.cs" />
-    <Compile Include="Schema\ORMInfoPool.cs" />
+    <Compile Include="Schema\ObjectSchemaContainer.cs" />
     <Compile Include="Schema\OrmMappingException.cs" />
-    <Compile Include="Schema\QueryNames.cs" />
+    <Compile Include="Schema\AliasMaps.cs" />
     <Compile Include="Schema\SqlBuilder.cs" />
     <Compile Include="Schema\StringBuffer.cs" />
     <Compile Include="Schema\StringBufferException.cs" />
@@ -285,10 +301,11 @@
     <Content Include="XmlMapping\Documentation\SampleTwo.xml" />
     <Content Include="XmlMapping\Documentation\SampleOne.xml" />
     <Content Include="XmlMapping\Documentation\XmlSchema 1.0.xml" />
+    <Content Include="_prj.references\nunit.framework.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Include="_prj.buildsupport\build.bat" />
-    <None Include="_prj.documentation\Connections.config">
+    <None Include="_prj.documents\Connections.config">
       <SubType>Designer</SubType>
     </None>
     <None Include="XmlMapping\Documentation\ORM-Mapping-Schema.xsd">
@@ -297,13 +314,13 @@
     <None Include="XmlMapping\Documentation\ORM-Mapping-Schema.xsx">
       <DependentUpon>ORM-Mapping-Schema.xsd</DependentUpon>
     </None>
-    <None Include="_prj.documentation\connections.config.schema.xsd">
+    <None Include="_prj.documents\connections.config.schema.xsd">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="DataQuery\Parsers\NUnitTesters\" />
     <Folder Include="Oracle\" />
+    <Folder Include="_prj.test\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

@@ -15,16 +15,19 @@ namespace Silvtek.ORMEngine.DataQuery
 	/// <summary>
 	///  Represents a Result Set adquired thru <see cref="Query" /> object.
 	/// </summary>
-	public class ResultSet : ReadOnlyCollectionBase, IEnumerable
+	public class ResultSet : ReadOnlyCollectionBase
 	{
 
 		#region -- MemberVariables --
-        
+
+        private object mutex = new object();
+          private readonly string identifier;
 		  private readonly string propertyKey;
           private readonly Type typeKey;
           private readonly HybridDictionary table;
 		  private ResultColumn[] columns;
-		  private readonly string identifier;
+	    
+		  
 		  private readonly string sql;
          
 		
@@ -33,12 +36,6 @@ namespace Silvtek.ORMEngine.DataQuery
         ///<summary>
         /// Gets a single row in the collection.
         ///</summary>
-        ///<param name="index">
-        /// The index to retrieve.
-        ///</param>
-        ///<value>
-        /// The <see cref="ResultRow" /> on <paramref name="index">.
-        ///</value>
         public ResultRow this [int rowIndex]
         {
           get {return GetRow(rowIndex);}
@@ -90,7 +87,10 @@ namespace Silvtek.ORMEngine.DataQuery
 
             ResultRow[] rangeArray = new ResultRow[count];
 
-            InnerList.CopyTo(startIndex, rangeArray, 0, count);
+            lock (mutex)
+            {
+                InnerList.CopyTo(startIndex, rangeArray, 0, count);
+            }
 
             return rangeArray;
         }
@@ -174,7 +174,13 @@ namespace Silvtek.ORMEngine.DataQuery
         public Array GetObjects(Type type, int startIndex, int count)
         {
             ResultColumn column = GetColumn(type);
-            return column.ToArray(type, startIndex, count);
+            Array ar = null;
+            lock (mutex)
+            {
+                ar = column.ToArray(type, startIndex, count);
+            }
+
+            return ar;
         }
 
         /// <summary>
@@ -187,12 +193,26 @@ namespace Silvtek.ORMEngine.DataQuery
         public Array GetObjects(int columnIndex, int startIndex, int count)
         {
             ResultColumn column = GetColumn(columnIndex);
-            return column.ToArray(startIndex, count);
+
+            Array ar = null;
+
+            lock (mutex)
+            {
+                ar = column.ToArray(startIndex, count);
+            }
+
+            return ar;
         }
 
         public Array GetObjects()
         {
-            return GetColumn(0).ToArray();
+            Array ar = null;
+            lock (mutex)
+            {
+                ar = GetColumn(0).ToArray();
+            }
+
+            return ar;
         }
 
         public Array GetObjects(int startIndex, int count)
@@ -245,26 +265,26 @@ namespace Silvtek.ORMEngine.DataQuery
 
         private void AddKey(ResultRow row)
         {
-           ORMObject obj = (ORMObject)row.GetObject(typeKey);
-           if (obj != null)
-           {
-             MapMember MappedMember = obj.ObjectInfo.MappedMembers.Find(propertyKey);
-             
-               if (!MappedMember.Properties.IsPrimaryKey && !MappedMember.Properties.HasSequenceProvider)
-             {
-				 string exMsg = Utility.GetResourceString("RESULTSET:EXCEPTION:NO_PK_OR_SEQ", typeKey.FullName, propertyKey);
-                 throw new QueryException(exMsg);
-             }
-             
-             object key = MappedMember.GetMemberValue(obj);
+            ORMObject obj = (ORMObject) row.GetObject(typeKey);
+            if (obj != null)
+            {
+                MapMember mapMember = obj.ObjectInfo.MappedMembers.Find(propertyKey);
 
-            // Debug.WriteLine(String.Format("{0}.{1} = {2}",typeKey.FullName, propertyKey, key));
-             table.Add(key, row);
-           }
+                if (!mapMember.Properties.IsPrimaryKey && !mapMember.Properties.HasSequenceProvider)
+                {
+                    string exMsg = Utility.GetResourceString("RESULTSET:EXCEPTION:NO_PK_OR_SEQ", typeKey.FullName, propertyKey);
+                    throw new QueryException(exMsg);
+                }
+
+                object key = mapMember.GetMemberValue(obj);
+
+                // Debug.WriteLine(String.Format("{0}.{1} = {2}",typeKey.FullName, propertyKey, key));
+                table.Add(key, row);
+            }
         }
 
 
-		private void AddToColumns(ResultRow row)
+	    private void AddToColumns(ResultRow row)
 		{
 			if (row == null)return;
 
@@ -273,6 +293,29 @@ namespace Silvtek.ORMEngine.DataQuery
 				columns[i].Add(row); 
 			}
 		}
+
+        internal void Append(ResultSet resultSet)
+        {
+            lock (mutex)
+            {
+                InnerList.AddRange(resultSet.InnerList);
+
+                for (int i = 0; i < columns.Length; i++)
+                {
+                    columns[i].AddRange(resultSet.columns[i]);
+                }
+
+
+                if (typeKey != null && propertyKey != null)
+                {
+
+                    foreach (object key in resultSet.table.Keys)
+                    {
+                        table.Add(key, resultSet.table[key]);
+                    }
+                }
+            }
+        }
 
     #endregion
 	}

@@ -22,17 +22,20 @@ namespace Silvtek.ORMEngine.DataQuery
     /// </summary>
     public abstract class QueryBase
     {
+
+
+        private bool isCaseSensitive;
+        private bool distinctKeyword;
+        private Criterias criterias;
+        private Criterias aggregates;
+        private Joins joins;
+        private QueriedTypes types;
+        private QueriedAggregates queriedAggregates;
+        private OrderColumns orderColumns;
+
         
-      
-        private bool                isCaseSensitive;
-        private bool                distinctKeyword;
-        private Criterias           criterias;
-        private Criterias           aggregates;
-        private Joins               joins;
-        private QueriedTypes        types;
-        private QueriedAggregates   queriedAggregates;
-        private OrderColumns        orderColumns;
-        
+
+
         /// <summary>
         /// Gets or sets whether the query will be case sensitive.
         /// </summary>
@@ -55,7 +58,7 @@ namespace Silvtek.ORMEngine.DataQuery
 
 
         #region -- Internal Properties --
-        
+
         /// <summary>
         /// Gets the criteria collection.
         /// </summary>
@@ -93,7 +96,7 @@ namespace Silvtek.ORMEngine.DataQuery
         /// </summary>
         internal QueriedAggregates QueriedAggregates
         {
-            get 
+            get
             {
                 if (queriedAggregates == null) queriedAggregates = new QueriedAggregates();
                 return queriedAggregates;
@@ -108,7 +111,7 @@ namespace Silvtek.ORMEngine.DataQuery
             get { return orderColumns; }
         }
 
-        #endregion 
+        #endregion
 
 
         /// <summary>
@@ -152,7 +155,7 @@ namespace Silvtek.ORMEngine.DataQuery
         /// </remarks>
         /// <returns>It returns the index of the column in which this type
         /// will be located </returns>
-        public int RegisterType(Type type)
+        public virtual int RegisterType(Type type)
         {
             if (types == null) types = new QueriedTypes();
             return types.Add(type);
@@ -168,12 +171,12 @@ namespace Silvtek.ORMEngine.DataQuery
             return new Join(Types.MainType, member);
         }
 
- 
+
         protected QueryBase(Type type)
-		{
+        {
             types = new QueriedTypes();
             types.Add(type);
-		}
+        }
 
         public void AddJoin(Join join)
         {
@@ -204,7 +207,7 @@ namespace Silvtek.ORMEngine.DataQuery
             {
                 throw new ArgumentException("Member cannot be an empty string or null", "memberName");
             }
-            
+
             if (this.orderColumns == null) this.orderColumns = new OrderColumns();
             orderColumns.Add(type, memberName, direction);
         }
@@ -221,13 +224,14 @@ namespace Silvtek.ORMEngine.DataQuery
             Aggregates.Add(criteria);
         }
 
-        
+
 
         // Generates an unique queryID depending of the sql and main type.
         internal static string GenerateQueryIdentifier(Type type, string sql)
         {
             if ((sql == null) || (sql.Length == 0)) return String.Empty;
 
+           
             byte[] bytes = Encoding.UTF8.GetBytes(sql);
             SHA1Managed sha1 = new SHA1Managed();
             byte[] result = sha1.ComputeHash(bytes);
@@ -325,10 +329,13 @@ namespace Silvtek.ORMEngine.DataQuery
             if (result == null) return null;
             AsyncResult asyncResult = (AsyncResult)result;
             QueryExecuteCaller ormActionDelegate = (QueryExecuteCaller)asyncResult.AsyncDelegate;
-            return ormActionDelegate.EndInvoke(result); 
+            return ormActionDelegate.EndInvoke(result);
         }
 
         #region -- Execute Methods --
+
+        
+
         /// <summary>
         ///  Execute query and sets the duration that it can be cached.
         /// </summary>
@@ -368,17 +375,19 @@ namespace Silvtek.ORMEngine.DataQuery
             Execute(false);
         }
 
-        
-        #endregion 
+
+
+        #endregion
 
 
         internal abstract void Execute(bool realtime, TimeController controller);
+
         public abstract string GetSql();
 
 
         private Criterias GetCriterias()
         {
-            if (criterias == null)criterias = new Criterias(false);
+            if (criterias == null) criterias = new Criterias(false);
             return criterias;
         }
 

@@ -35,11 +35,6 @@ namespace Silvtek.ORMEngine.Schema
         public abstract bool IsCacheDisabled { get;}
 
         /// <summary>
-        /// Gets a collection of query names;
-        /// </summary>
-        //public abstract AliasMaps AliasMaps { get;}
-
-        /// <summary>
         /// Gets the name of the connection.
         /// </summary>
         public string ConnectionName 

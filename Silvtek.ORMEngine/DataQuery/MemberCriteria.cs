@@ -15,11 +15,11 @@ namespace Silvtek.ORMEngine.DataQuery
     public class CriteriaItem : ISqlGenerator
     {
 
-        private Type type;
-        private string memberName;
+        private readonly Type type;
+        private readonly string memberName;
         private CriteriaParser parser;
-        private Aggregate aggregate;
-        private bool distinct;
+        private readonly Aggregate aggregate;
+        private readonly bool distinct;
         private bool isCaseSensitive;
 
         public bool IsQueryCaseSensitive

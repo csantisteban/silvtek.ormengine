@@ -4,7 +4,6 @@
 #endregion
 
 using System;
-using System.Collections;
 using Silvtek.ORMEngine.Schema;
 using Silvtek.ORMEngine.DataQuery.Parsers;
 
@@ -16,10 +15,10 @@ namespace Silvtek.ORMEngine.DataQuery
 	public class Join	: ISqlGenerator
 	{
 
-		private ObjectSchemaInfo firstObject;      // First object.
+		private readonly ObjectSchemaInfo firstObject;      // First object.
         private ObjectSchemaInfo secondObject;     // Second object.
-		private string memberName;              // The member name of the first object that will map the second object.
-		private Criterias criteria;             // The collection of criterias for the join.
+		private readonly string memberName;              // The member name of the first object that will map the second object.
+		private readonly Criterias criteria;             // The collection of criterias for the join.
         private JoinType joinType;              // The join type.
 		private bool isCaseSensitive;           // Whether the join is case sensitive or not.
 
@@ -65,7 +64,7 @@ namespace Silvtek.ORMEngine.DataQuery
             secondObject = ORM.GetObjectInfo(type);
 
             string text = secondObject.MappedMembers.Find(member).ColumnFullName;
-            SqlText sqlCriteria = new SqlText(text, false);
+            CommandText sqlCriteria = new CommandText(type, text);
             criteriaItem.Condition(comparison, sqlCriteria);
             criteria.Add(criteriaItem);
             return criteria;

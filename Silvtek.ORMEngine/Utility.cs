@@ -248,6 +248,20 @@ namespace Silvtek.ORMEngine
             return BytesToHex(byteResult);
         }
 
+        // Generates an unique queryID depending of the sql and main type.
+        internal static string GenerateHashForText(string text)
+        {
+            if ((text == null) || (text.Length == 0)) return String.Empty;
+
+            byte[] bytes = Encoding.UTF8.GetBytes(text);
+            SHA1Managed sha1 = new SHA1Managed();
+            byte[] result = sha1.ComputeHash(bytes);
+            string identifier = Utility.BytesToHex(result);
+
+            return identifier;
+        }
+
+
         /// <summary>
         /// Converts the hex to bytes.
         /// </summary>

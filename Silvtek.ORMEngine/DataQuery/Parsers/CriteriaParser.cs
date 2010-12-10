@@ -51,9 +51,9 @@ namespace Silvtek.ORMEngine.DataQuery.Parsers
                 criteria = new SubQueryCriteria(info, memberName, (QueryBase)value);
                 criteria.SetComparison(comparison);
             }
-            else if (value is SqlText)
+            else if (value is CommandText)
             {
-                criteria = new SqlTextCriteria(info, memberName, (SqlText)value);
+                criteria = new SqlTextCriteria(info, memberName, (CommandText)value);
                 criteria.SetComparison(comparison);
             }
             else

@@ -6,7 +6,10 @@
 using System;
 using System.Reflection;
 using System.Diagnostics;
+using System.Runtime.Remoting.Messaging;
+using System.Threading;
 using Silvtek.ORMEngine.Configs;
+using Silvtek.ORMEngine.QueryLanguage;
 using Silvtek.ORMEngine.Schema;
 using Silvtek.ORMEngine.Caching;
 using Silvtek.ORMEngine.DataQuery.Parsers;
@@ -20,6 +23,8 @@ namespace Silvtek.ORMEngine.DataQuery
 	public class Query : QueryBase
 	{
 
+        private delegate void Load(string queryIdentifier, string sql, TimeController timeController, AutoResetEvent ev);
+
 		// Variables that controls returned object state.
 		private bool bindObjects;				// Holds whether binds query object to the ORM reference manager
 		private bool lockObjects;				// Holds all the object returned in the result set.
@@ -29,8 +34,13 @@ namespace Silvtek.ORMEngine.DataQuery
         private bool resultsSetFromCache;
 		private Type resultsetTypeKey;			// Holds the class type that one of its property will be use as a key column.
         private string resultsetMemberyKey;	// Holds the property name that is used as a key column.
+	    private bool loadInBackground;
+	    private int rowNumberBuffer;
+	    private int waitForInitialResults;
 
+	    private CommandText commandtext;
 
+	   
         ///<summary>
         /// Event fired every time a <see cref="ResultRow" /> is loaded in
         ///the <see cref="ResultSet" />.
@@ -82,7 +92,6 @@ namespace Silvtek.ORMEngine.DataQuery
 		///<value>
 		/// <see lang="true" /> the objects; The default value is <see lang="true" />.
 		///</value>
-		///<remarks>
 		public bool LockObjects
 		{
 			get {return lockObjects;}
@@ -93,9 +102,6 @@ namespace Silvtek.ORMEngine.DataQuery
 		/// Gets or sets whether the object returned by the <see cref="ResultSet" /> are bound which means they are
 		/// managed by the <I>ORM Reference manager</I> and they can perform operations with the database.
 		///</summary>
-		///<value>
-		/// <see lang="true"/> to bind the object in the <see cref="ResultSet"/>; otherwise <see lang="false" />. 
-		/// The default value is <see lang="false" />.
 		public bool BindObjects
 		{
 			get {return bindObjects; }
@@ -104,6 +110,29 @@ namespace Silvtek.ORMEngine.DataQuery
 
 
         /// <summary>
+        /// Gets or sets the number of records to be preloaded
+        /// </summary>
+        /// <value>The row number buffer.</value>
+	    public int RowNumberBuffer
+	    {
+            get { return rowNumberBuffer; }
+            set { rowNumberBuffer = value; }
+	    }
+
+	    public bool LoadInBackground
+	    {
+	        get { return loadInBackground; }
+	        set { loadInBackground = value; }
+	    }
+
+	    public int WaitForInitialResultsInMs
+	    {
+	        get { return waitForInitialResults; }
+	        set { waitForInitialResults = value; }
+	    }
+
+
+	    /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="type">The type of the main object used in the query</param>
@@ -111,6 +140,21 @@ namespace Silvtek.ORMEngine.DataQuery
 		{
             Distinct = false;
             resultsSetFromCache = false;
+	        rowNumberBuffer = 1000;
+	        WaitForInitialResultsInMs = 15000;
+	        loadInBackground = false;
+		}
+
+
+        
+        public void SetCommandText(CommandText cmdtext)
+        {
+            if (cmdtext == null)
+            {
+                throw new ArgumentNullException("cmdtext");
+            }
+
+            this.commandtext = cmdtext;
         }
 
 
@@ -119,10 +163,26 @@ namespace Silvtek.ORMEngine.DataQuery
         /// </summary>
         public override string GetSql()
         {
-            QueryParser parser = new QueryParser(this);
-            return parser.GetSql();           
-        }
+            if (commandtext == null)
+            {
+                QueryParser parser = new QueryParser(this);
+                return parser.GetSql();
+            }
+            else
+            {
+                InternalQLangParser parser = new InternalQLangParser(commandtext);
+                string sql = parser.Parse();
+                base.Types.Clear();
+                ObjectSchemaInfo[] objectSchemaInfos = parser.ObjectSchemaInfos;
+                 
+                foreach(ObjectSchemaInfo info in objectSchemaInfos)
+                {
+                    Types.Add(info);
+                }
 
+                return sql;
+            }
+        }
 
         /// <summary>
         /// Register with the query the type and member (field or property) used as a key value. The
@@ -148,9 +208,51 @@ namespace Silvtek.ORMEngine.DataQuery
 			Debug.Write("[Query] Executing sql: "+sql, Resources.TRACE_CATEGORY);
 #endif
 
-           LoadResults(queryIdentifier, sql, realTime, controller);
-           FireQueryExecutionCompleted();
+            if ((!realTime) && QueryCache.Current.Exists(queryIdentifier))
+            {
+                resultset = QueryCache.Current.GetResultSet(queryIdentifier);
+                if (resultset != null)
+                {
+                    resultsSetFromCache = true;
+                    FireQueryExecutionCompleted();
+                    return;
+                }
+            }
+
+            int numberOfColumns = Types.Count;
+            resultset = new ResultSet(resultsetTypeKey, resultsetMemberyKey, queryIdentifier, sql, numberOfColumns);
+ 
+            if (!LoadInBackground)
+            {
+                LoadResults(queryIdentifier, sql, controller, null);
+                FireQueryExecutionCompleted();
+            }
+            else
+            {
+                AutoResetEvent ev = new AutoResetEvent(false); 
+                Load load = new Load(LoadResults);
+                load.BeginInvoke(queryIdentifier, sql, controller, ev, LoadCallBack, this);
+
+                // wait for the buffer to be filled.
+
+                ev.WaitOne(waitForInitialResults);
+    
+            }
         }
+
+
+        private static void LoadCallBack(IAsyncResult result)
+        {
+            if (result == null) return;
+            AsyncResult asyncResult = (AsyncResult)result;
+            Load loadDelegate = (Load)asyncResult.AsyncDelegate;
+            loadDelegate.EndInvoke(result);
+
+            Query query = (Query)asyncResult.AsyncState;
+            query.FireQueryExecutionCompleted();
+        }
+
+     
 
         #region --  Execute SQL Method --
 
@@ -158,35 +260,34 @@ namespace Silvtek.ORMEngine.DataQuery
         /// Executes query.
         ///</summary>
         // Comments on this methods are verbose, but worth it.
-        private void LoadResults(string queryIdentifier, string sql, bool realtime, TimeController timeController)
+        private void LoadResults(string queryIdentifier, string sql, TimeController timeController, AutoResetEvent ev)
         {
 
-            if ((!realtime) && QueryCache.Current.Exists(queryIdentifier))
-            {
-                resultset = QueryCache.Current.GetResultSet(queryIdentifier);
-                if (resultset != null)
-                {
-                    resultsSetFromCache = true;
-                    return;
-                }
-            }
+            QueryCache.Current.AddItem(resultset, Types.MainType.Type, timeController);
 
             resultsSetFromCache = false;
+
             // Number of object columns for the result set.
             int numberOfColumns = Types.Count;
 
             // Creates the result set object.
-            resultset = new ResultSet(resultsetTypeKey, resultsetMemberyKey, queryIdentifier, sql, numberOfColumns);
-
+            
+            ResultSet bufferResultSet = null;
             //Get the connection from the main dataobject.
             Connection cnn = Types.MainType.GetConnection();
 
+            if (loadInBackground)
+            {
+                bufferResultSet = new ResultSet(resultsetTypeKey, resultsetMemberyKey, queryIdentifier, sql, numberOfColumns);
+            }
 
+            int counter = 0;
             try
             {
                 cnn.Open();
                 Command cmd = new Command(sql, cnn);
                 DataReader reader = cmd.ExecuteReader();
+                
 
                 // Start reading database rows
                 while (reader.Read())
@@ -254,7 +355,6 @@ namespace Silvtek.ORMEngine.DataQuery
                                     }
                                 }
 
-
                             }
                             else
                             {
@@ -305,28 +405,52 @@ namespace Silvtek.ORMEngine.DataQuery
                     }
 
 
+                   
+                    if (LoadInBackground && bufferResultSet != null)
+                    {
+                        int index = bufferResultSet.AddRow(currentRow);
+                        if (index >= RowNumberBuffer)
+                        {
+                            resultset.Append(bufferResultSet);
+                            bufferResultSet = new ResultSet(resultsetTypeKey, resultsetMemberyKey, queryIdentifier, sql, numberOfColumns);
+                            if (ev != null)
+                            {
+                                ev.Set();
+                            }                            
+                        }
+                    }
+                    else
+                    {
+                        resultset.AddRow(currentRow); 
+                    }
 
-                    int index = resultset.AddRow(currentRow);
-
+                    counter++;
                     cnn.UpdateExecutionDateTime();
-                    FireRowLoaded(this, index, currentRow);
+                    FireRowLoaded(this, counter, currentRow);
                     cnn.UpdateExecutionDateTime();
 
                 }
 
+                if (LoadInBackground)
+                {
+                    if (bufferResultSet != null)
+                    {
+                        resultset.Append(bufferResultSet);
+                    }
+
+                    if (ev != null)
+                    {
+                        ev.Set();
+                    }
+                }
                 reader.Close();
-            }
-            catch (Exception e)
-            {
-               // Trace.WriteLine(Utility.GetResourceString("TRACE_EXECUTE_QUERY_EXCEPTION", sql, e.Message, e.StackTrace), Resources.TRACE_CATEGORY);
-                throw;
             }
             finally
             {
                 cnn.Close();
             }
 
-            QueryCache.Current.AddItem(resultset, Types.MainType.Type, timeController);
+            
           //  cnn = null;
            // cmd = null;
         }
@@ -410,7 +534,7 @@ namespace Silvtek.ORMEngine.DataQuery
 
                 if (memberName.Length != 0 && simpleCriteria.Value.Length != 0)
                 {
-                    MapMember map = Types.MainType.MappedMembers.FindCaseInsensitive(memberName);
+                    MapMember map = Types.MainType.MappedMembers.Find(memberName);
 
                     CriteriaItem criteria = new CriteriaItem(Types.MainType.Type, map.MemberName);
                     criteria.EqualTo(simpleCriteria.Value);
@@ -467,7 +591,6 @@ namespace Silvtek.ORMEngine.DataQuery
         /// Gets all records stored in the database for the type provided
         /// </summary>
         /// <param name="type">Type</param>
-        /// <param name="realtime"></param>
         /// <param name="realtime">Whether the query should be realtime or it can be taken from the query cache.</param>
         public static Array GetAll(Type type, bool realtime)
         {
