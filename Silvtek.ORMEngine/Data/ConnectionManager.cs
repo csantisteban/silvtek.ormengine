@@ -18,6 +18,7 @@ namespace Silvtek.ORMEngine.Data
 	{
         
         private static ConnectionManager manager;
+        private static object connection_manager_mutex = new object();
 	    private static bool startConf = true;
         
         
@@ -256,8 +257,8 @@ namespace Silvtek.ORMEngine.Data
 		private static ConnectionManager GetSingleton()
 		{
 			if (manager != null)return manager;
-			
-			lock(typeof(ConnectionManager))
+
+            lock (connection_manager_mutex)
 			{
 				if (manager == null)
 				{

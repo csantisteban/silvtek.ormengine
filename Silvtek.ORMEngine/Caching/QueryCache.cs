@@ -21,6 +21,7 @@ namespace Silvtek.ORMEngine.Caching
 		
         // Holds the cache singleton.
 		private static QueryCache  cache = null;
+        private static object query_cache_mutex_object = new object();
         private const int period = 30000; 
 		private readonly Timer timer;
 		private readonly CacheItemList items;
@@ -166,7 +167,7 @@ namespace Silvtek.ORMEngine.Caching
 		{
 			if (cache != null)return cache;
 			
-			lock(typeof(QueryCache))
+			lock(query_cache_mutex_object)
 			{
 				if (cache == null)
 				{

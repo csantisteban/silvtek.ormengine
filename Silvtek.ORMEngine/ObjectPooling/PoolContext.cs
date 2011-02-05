@@ -12,6 +12,7 @@ namespace Silvtek.ORMEngine.ObjectPooling
     internal class PoolContext
     {
         private static PoolContext context;
+        private static object context_mutex = new object();
 
         private readonly PoolManager manager;
 
@@ -53,7 +54,7 @@ namespace Silvtek.ORMEngine.ObjectPooling
             get
             {
                 if (context != null) return context;
-                lock(typeof(PoolContext))
+                lock (context_mutex)
                 {
                     if (context == null)
                     {
