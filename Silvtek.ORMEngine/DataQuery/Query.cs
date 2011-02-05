@@ -231,12 +231,16 @@ namespace Silvtek.ORMEngine.DataQuery
             {
                 AutoResetEvent ev = new AutoResetEvent(false); 
                 Load load = new Load(LoadResults);
-                load.BeginInvoke(queryIdentifier, sql, controller, ev, LoadCallBack, this);
+                load.BeginInvoke(queryIdentifier, sql, controller, ev, new AsyncCallback(LoadCallBack) , this);
 
                 // wait for the buffer to be filled.
 
+#if NET20
                 ev.WaitOne(waitForInitialResults);
-    
+#endif
+#if NET11
+                ev.WaitOne();
+#endif
             }
         }
 
