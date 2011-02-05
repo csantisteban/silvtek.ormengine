@@ -55,7 +55,13 @@ namespace Silvtek.ORMEngine.QueryLanguage
         {
             string originalcommand = commandText.Text;
 
+#if NET20
             int fromIndex = originalcommand.IndexOf("from", 0, StringComparison.OrdinalIgnoreCase);
+#endif
+#if NET11
+            int fromIndex = originalcommand.ToLower().IndexOf("from", 0);  
+#endif
+
 
             string tmpBeforeFrom = originalcommand.Substring(0, fromIndex - 1);
             string tmpAfterFrom = originalcommand.Substring(fromIndex);
@@ -120,7 +126,7 @@ namespace Silvtek.ORMEngine.QueryLanguage
 
                 types.Add(queryType);
                 typeTable[queryType.Name] = queryType;
-                if (!String.IsNullOrEmpty(alias))
+                if (alias.Length > 0)
                 {
                     aliasList[alias] = queryType;
                     Debug.WriteLine("Registering alias " + alias);
