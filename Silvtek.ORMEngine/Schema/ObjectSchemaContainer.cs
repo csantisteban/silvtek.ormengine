@@ -18,7 +18,7 @@ namespace Silvtek.ORMEngine.Schema
     ///</remarks>
 	internal sealed class ObjectSchemaContainer
 	{
-
+        private static object object_schema_container_mutex = new object(); 
         private static ObjectSchemaContainer container;     // Hold the unique instance of this class.
         private readonly Hashtable listholder;               // hold the ObjectSchemaInfo
 
@@ -126,7 +126,7 @@ namespace Silvtek.ORMEngine.Schema
 		{
 			if (container != null)return container;
 
-			lock(typeof(ObjectSchemaContainer))
+            lock (object_schema_container_mutex)
 			{
 				if (container == null)
 				{

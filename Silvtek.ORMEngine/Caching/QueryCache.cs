@@ -180,7 +180,7 @@ namespace Silvtek.ORMEngine.Caching
 
         internal static void EmptyCache()
         {
-            if (cache != null) cache = null;
+            cache = null;
         }
 
         internal static void EmptyCache(Type type)
