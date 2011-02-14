@@ -10,19 +10,20 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 
 namespace Silvtek.ORMEngine.ObjectPooling
 {
     internal class InternalPool
     {
-        private delegate void ObjectCreation();
+        private delegate ArrayList ObjectCreation();
 
         private readonly int minInstances;
         private readonly int maxInstances;
         private bool isReady;
         private readonly Type type;
         private readonly Queue queue;
-        private readonly ArrayList newObjects;
+       // private readonly ArrayList newObjects;
         private event EventHandler OnLowCount;
 
         internal InternalPool(Type type, int minInstances, int maxInstances)
@@ -33,8 +34,8 @@ namespace Silvtek.ORMEngine.ObjectPooling
             this.type = type;
             this.minInstances = minInstances;
             this.maxInstances = maxInstances;
-            newObjects = ArrayList.Synchronized(new ArrayList());
-            queue = Queue.Synchronized(new Queue());
+            //newObjects = new ArrayList();
+            queue = new Queue();
           
             CreateObjects();
         }
@@ -53,12 +54,13 @@ namespace Silvtek.ORMEngine.ObjectPooling
                 return Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null, null);
             }
 
-
-
             object obj  = null;
             try
             {
-                obj = queue.Dequeue();
+                lock (queue.SyncRoot)
+                {
+                    obj = queue.Dequeue();
+                }
             }
             catch (InvalidOperationException)
             {
@@ -72,6 +74,11 @@ namespace Silvtek.ORMEngine.ObjectPooling
                 if (OnLowCount != null) OnLowCount(this, EventArgs.Empty);
             }
 
+            if (obj == null)
+            {
+                obj = Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null, null);
+            }
+
             return obj;
         }
 
@@ -81,55 +88,57 @@ namespace Silvtek.ORMEngine.ObjectPooling
             objCreation.BeginInvoke(ObjectCreationCompleted, null);
         }
 
-        private void AsynchCreateObjects()
+        private ArrayList AsynchCreateObjects()
         {
-            lock (newObjects.SyncRoot)
+            ArrayList newObjects = new ArrayList();
+
+            int numberOfObjs = maxInstances - queue.Count;
+            int exceptions = 0;
+            for (int i = 0; i < numberOfObjs; i++)
             {
-                int numberOfObjs = maxInstances - queue.Count;
-                int exceptions = 0;
-                for (int i = 0; i < numberOfObjs; i++)
+                try
                 {
-                    try
-                    {
-                        object pooledInstance = Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null, null);
-                        if (pooledInstance != null)
-                        {
-                            newObjects.Add(pooledInstance);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        exceptions++;
-                        if (exceptions > 3)
-                        {
-                            Trace.TraceError("Failed to create pool of objects for type: " + type.FullName + " error: " + ex.Message);
-                  
-                            break;
-                        }
+                    object pooledInstance = Activator.CreateInstance(type, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, null, null, null);
+                    newObjects.Add(pooledInstance);
 
-
-                        continue;
-                    }
                 }
+                catch (Exception ex)
+                {
+                    exceptions++;
+                    if (exceptions > 3)
+                    {
+                        Trace.TraceError("Failed to create pool of objects for type: " + type.FullName + " error: " + ex.Message);
+
+                        break;
+                    }
+
+
+                    continue;
+                }
+
             }
+
+            return newObjects;
         }
 
         private void ObjectCreationCompleted(IAsyncResult result)
         {
-            
+
+            if (result == null) return;
+            AsyncResult asyncResult = (AsyncResult)result;
+            ObjectCreation asyncDelegate = (ObjectCreation)asyncResult.AsyncDelegate;
+            ArrayList newObjects = asyncDelegate.EndInvoke(result);
+
             lock(queue.SyncRoot)
             {
-                int count = newObjects.Count;
-                for(int i = 0; i < count; i++)
+                //int count = newObjects.Count;
+                for (int i = 0; i < newObjects.Count; i++)
                 {
                     queue.Enqueue(newObjects[i]);
                 }
             }
 
-            lock(newObjects.SyncRoot)
-            {
-                newObjects.Clear();
-            }
+           
 
             if (!isReady) isReady = true;
         }

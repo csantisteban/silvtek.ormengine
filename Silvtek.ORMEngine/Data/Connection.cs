@@ -22,7 +22,7 @@ namespace Silvtek.ORMEngine.Data
 	public class Connection : IDbConnection
 	{
 #if NET20
-        private static readonly Pool<Connection> connectionPool = new Pool<Connection>(5, 35);
+        private static readonly Pool<Connection> connectionPool = new Pool<Connection>(45, 2500);
 #endif
 
         #region -- Member variables --

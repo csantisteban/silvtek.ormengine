@@ -66,21 +66,21 @@
     <if test="${nant.settings.currentframework=='net-2.0'}">
       <fileset id="build.sources" basedir="${source.path}">
         <include name="**/*.${language.fileextension}"/>
-        <exclude name="_prj.tests/*.*" />
+        <exclude name="_prj.test/*.*" />
         <exclude name="_ReSharper**" />
       </fileset>
     </if>
     <if test="${nant.settings.currentframework=='net-3.5'}">
       <fileset id="build.sources" basedir="${source.path}">
         <include name="**/*.${language.fileextension}"/>
-        <exclude name="_prj.tests/*.*" />
+        <exclude name="_prj.test/*.*" />
         <exclude name="_ReSharper**" />
       </fileset>
     </if>
     <if test="${nant.settings.currentframework=='net-1.1'}">
       <fileset id="build.sources" basedir="${source.path}">
         <include name="**/*.${language.fileextension}"/>
-        <exclude name="_prj.tests/*.*" />
+        <exclude name="_prj.test/*.*" />
         <exclude name="_ReSharper**" />
         <exclude name="resource.designer.cs" />
       </fileset>
