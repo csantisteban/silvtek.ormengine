@@ -217,7 +217,7 @@ namespace Silvtek.ORMEngine
         ///</value>
         public ActionResult Result
         {
-          get {return result; }
+          get { return result; }
         }
 
         /// <summary>
@@ -318,6 +318,10 @@ namespace Silvtek.ORMEngine
 
 		#endregion
 
+        internal void SetActionResult(ActionResult actionResult)
+        {
+            this.result = actionResult;
+        }
 
         internal string GetCreateStatement()
         {

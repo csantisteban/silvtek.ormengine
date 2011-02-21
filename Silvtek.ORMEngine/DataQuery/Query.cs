@@ -401,6 +401,7 @@ namespace Silvtek.ORMEngine.DataQuery
                                 ORM.Lock(ormObj);
                             }
 
+                            ormObj.SetActionResult(ActionResult.Succeed);
                             ormObj.InternalFireAfterLoaded();
                         }
 

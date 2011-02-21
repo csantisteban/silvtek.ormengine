@@ -13,9 +13,9 @@ namespace Silvtek.ORMEngine.Encryption
 {
     public class DefaultEncryptionProvider : EncryptionProvider
     {
-        private const int passwordIterations = 2;                // can be any number
-        private const string initVector = "t$XYtfBQMCTAoOLG";    // must be 16 bytes
-        private const int keySize = 128;                         // can be 192 or 128
+        private const int _PASSWORD_ITERATIONS = 2;                // can be any number
+        private const string _INIT_VECTOR = "t$XYtfBQMCTAoOLG";    // must be 16 bytes
+        private const int _KEY_SIZE = 128;                         // can be 192 or 128
 
         private byte[] saltValueBytes;
         private byte[] initVectorBytes;
@@ -197,7 +197,7 @@ namespace Silvtek.ORMEngine.Encryption
         {
             if (initVectorBytes == null)
             {
-                initVectorBytes = Encoding.ASCII.GetBytes(initVector);
+                initVectorBytes = Encoding.ASCII.GetBytes(_INIT_VECTOR);
             }
         }
 
@@ -217,11 +217,11 @@ namespace Silvtek.ORMEngine.Encryption
             byte[] keyBytes = passwordDeriveBytes.GetBytes(keySize / 8);
 #endif
 #if NET20
-            Rfc2898DeriveBytes rfc2898DeriveBytes = new Rfc2898DeriveBytes(Password, saltBytes, passwordIterations);
+            Rfc2898DeriveBytes rfc2898DeriveBytes = new Rfc2898DeriveBytes(Password, saltBytes, _PASSWORD_ITERATIONS);
 
             // Use the password to generate pseudo-random bytes for the encryption
             // key. Specify the size of the key in bytes (instead of bits).
-            byte[] keyBytes = rfc2898DeriveBytes.GetBytes(keySize / 8);
+            byte[] keyBytes = rfc2898DeriveBytes.GetBytes(_KEY_SIZE / 8);
 #endif
             return keyBytes;
         }
