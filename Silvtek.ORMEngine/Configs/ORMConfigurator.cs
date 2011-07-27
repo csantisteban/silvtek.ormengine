@@ -322,13 +322,6 @@ namespace Silvtek.ORMEngine.Configs
 
             Encoding tmpEncoding = Encoding.GetEncoding(encodingString);
 
-
-            if (tmpEncoding == null)
-            {
-                string exMsg = String.Format("Invalid encoding name. Value: {0}", tmpEncoding);
-                throw new ORMException(exMsg);
-            }
-
             defaultEncoding = tmpEncoding;
 
         }
