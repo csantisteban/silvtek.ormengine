@@ -24,7 +24,7 @@ namespace Silvtek.ORMEngine.Configs
             // read global settings
 
             MapFilePath = Utility.GetAttributeValue(document.DocumentElement, "global/map-file", "path");
-            BalancerShare = Utility.GetAttributeValue(document.DocumentElement, "global/shared-resources", "path");
+            BalancerShare = Utility.GetAttributeValue(document.DocumentElement, "global/shared", "path");
             WorkingFolder = Utility.GetAttributeValue(document.DocumentElement, "global/working-folder", "path");
             TempFolder = Utility.GetAttributeValue(document.DocumentElement, "global/temporary-folder", "path");
 
