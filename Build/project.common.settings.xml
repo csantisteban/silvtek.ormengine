@@ -2,7 +2,7 @@
 <!-- replace with actual value all "template.****} variables -->
 <project>
   <!-- TEMPLATE VARIABLES - CUSTOMIZE TO THE BUILD -->
-  <property name="template.application-name" value="ORM.Silvtek" />
+  <property name="template.application-name" value="Silvtek.ORMEngine" />
   <property name="template.company-name" value="Carlos Silva-Santisteban" />
   <property name="project.startdate" value="01/01/2002" />
   
