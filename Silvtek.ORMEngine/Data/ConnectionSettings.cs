@@ -36,7 +36,7 @@ namespace Silvtek.ORMEngine.Data
             isDefault = false;
             timeout = 45000;
             preparedStatements = false;
-            commandTimeout = 90;
+            commandTimeout = 30;
             retryExceptions = new RetryExceptions();
 
         }
@@ -123,7 +123,11 @@ namespace Silvtek.ORMEngine.Data
         public int CommandTimeout
         {
             get { return commandTimeout; }
-            set { commandTimeout = value; }
+            set
+            {
+                if (value <= 0) return;
+                commandTimeout = value;
+            }
         }
 
         /// <summary>

@@ -30,8 +30,8 @@ namespace Silvtek.ORMEngine.Configs
             [Test]
             public void LoadConfigurationSection()
             {
-                object obj = ConfigurationManager.GetSection("Silvtek.ORMEngine");
-
+               // object obj = ConfigurationManager.GetSection("Silvtek.ORMEngine");
+                object obj = ConfigurationSettings.GetConfig("Silvtek.ORMEngine");
 
                 Assert.IsNotNull(obj);
 

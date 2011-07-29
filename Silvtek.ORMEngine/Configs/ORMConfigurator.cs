@@ -260,7 +260,7 @@ namespace Silvtek.ORMEngine.Configs
                 {
                     this.configuration = new LegacyORMConfiguration();
                 }
-                else if (confXml.DocumentElement.LocalName == "ORMConfiguration")
+                else if (confXml.DocumentElement.LocalName == "Silvtek.ORMEngine")
                 {
                     string version = Utility.GetAttributeValue(confXml.DocumentElement, "version");
                     if (version == "1.0")

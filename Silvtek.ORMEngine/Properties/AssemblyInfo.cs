@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 //------------------------------------------------------------------------------
 
 [assembly: AssemblyTitle("Silvtek.ORMEngineV1.7")]
-[assembly: AssemblyDescription("Silvtek.ORMEngineV1.7  Release 07/28/2011 22:40:30")]
+[assembly: AssemblyDescription("Silvtek.ORMEngineV1.7  Release 07/29/2011 15:49:17")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Carlos Silva-Santisteban")]
 [assembly: AssemblyProduct("")]
@@ -20,7 +20,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: AssemblyVersion("1.7.35.610")]
-[assembly: AssemblyFileVersion("1.7.7828.8164")]
+[assembly: AssemblyFileVersion("1.7.7829.5697")]
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile("")]
 [assembly: AssemblyKeyName("")]
