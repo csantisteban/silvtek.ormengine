@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project>
+  <!-- DO NOT CHANGE THESE PROPERTIES -->
+  <property name="application.name" value="${template.application-name}" />
+  <property name="assembly.name" value="${template.assembly-name}" />
+  <property name="project.assemblyInfo.path" value="properties" />
+  <property name="project.buildsupport" value="_prj.buildsupport" />
+
+  <property name="project.path" value="${project.rootfolder}\${template.project-folder-name}" />
+  <property name="project.ftpupload" value="${template.ftpupload}"  if="${not property::exists('project.ftpupload')}"/>
+  <property name="project.references" value="${project::get-base-directory()}\_prj.references" />
+   
+  <property name="assembly.description" value="${assembly.name}  Release ${datetime::now()}" />
+
+  <include buildfile="${environment::get-variable('workspace')}\nant\common\git\globalvars.xml" />
+
+  <property name="assembly.title" value="${assembly.name}" />
+
+  <property name="copyright.company" value="${template.company-name}" />
+  <property name="copyright.notice" value="Copyright (c)2010, ${copyright.company}" />
+  
+  <property name="assembly.copyright" value="${copyright.notice}" />
+  <property name="help.copyright" value="${copyright.notice}" />
+  <property name="assembly.company" value="${copyright.company}" />
+  <property name="assembly.guid" value="" />
+  <property name="assembly.clsCompliant" value="true" />
+  <property name="assembly.comVisible" value="false" />
+  
+  <property name="help.HtmlHelpName" value="${assembly.name}" />
+  <property name="help.title" value="${assembly.name} Documentation" />
+
+
+  <property name="project.compiler.sources.target" value="_sourcefiles" />
+  <property name="project.compiler.resources.target" value="_resources" />
+  <property name="project.compiler.references.target" value="_references" />
+  <property name="project.compiler.externalfiles.target" value="_externalfiles" />
+
+  <target name="build.refresh.properties">
+    <property name="assembly.version.source" value="${template.version-source}" />
+    <property name="versionfile.folder" value="${template.version-folder}" />
+    <property name="strong.name.file" value="${template.strongname-file}" />
+    <property name="net.frameworks" value="${template.net.frameworks}" />
+    <property name="build.custom-defines" value="${template.custom.defines}" />
+    <property name="build.project-type" value="${template.build-project-type}" />
+    <property name="website.attributeassembly" value="${template.attribute-assembly}" /> 
+  </target>
+  
+</project>

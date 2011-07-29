@@ -1,0 +1,1 @@
+this folder must contain all reference for the whole project (solution). The developer is in charge to update with the latest version if need it.

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- replace all @var variables with actual values for your build. -->
+<project name="Silvtek.ORMEngine-1.7" default="project.build">
+
+  <!-- TEMPLATE VARIABLES - CUSTOMIZE TO THE BUILD -->
+
+  <property name="template.assembly-name" value="Silvtek.ORMEngineV1.7" />
+  <property name="template.project-folder-name" value="Silvtek.ORMEngine" />
+
+
+  <include buildfile="project.common.settings.xml" />
+  <include buildfile="project.common.properties.xml" />
+
+  <!-- current project settings -->
+  <include buildfile="${environment::get-variable('workspace')}\nant\common\GIT\versioning.xml" />
+  <include buildfile="${environment::get-variable('workspace')}\nant\common\GIT\extensions.xml" />
+  <property name="build.module" value="false" />
+
+ 
+
+  <target name="project.build">
+    <call target="project.build.net-1.1" />
+    <call target="project.build.net-2.0" />
+    <call target="project.build.net-3.5" />
+  </target>
+
+  <target name="project.build.net-1.1">
+    <property name="template.net.frameworks" value="net-1.1" />
+    <call target="build.refresh.properties" />
+    <echo message="project path: ${project.path}" />
+    <property name="strong.name.file" value="${template.strongname-file}" />
+    
+    <call target="extension.build"/>
+    <copy todir="${template.global-reference-directory}" >
+      <fileset basedir="${build.path}">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+
+  </target>
+
+  <target name="project.build.net-2.0">
+    <property name="template.net.frameworks" value="net-2.0" />
+    <call target="build.refresh.properties" />
+    <echo message="project path: ${project.path}" />
+    <property name="strong.name.file" value="${template.strongname-file}" />
+
+    <call target="extension.build"/>
+    <copy todir="${template.global-reference-directory}" >
+      <fileset basedir="${build.path}">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+
+  </target>
+
+
+  <target name="project.build.net-3.5">
+    <property name="template.net.frameworks" value="net-3.5" />
+    <call target="build.refresh.properties" />
+    <echo message="project path: ${project.path}" />
+    <property name="strong.name.file" value="${template.strongname-file}" />
+
+    <call target="extension.build"/>
+    <copy todir="${template.global-reference-directory}" >
+      <fileset basedir="${build.path}">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+
+  </target>
+
+
+  <!-- Handle the source file for compiling in net-3.0 -->
+  <target name="_sourcefiles">
+    <echo message="source path: ${source.path}" />
+    <if test="${nant.settings.currentframework=='net-1.1'}">
+      <fileset id="build.sources" basedir="${source.path}">
+        <include name="**/*.${language.fileextension}"/>
+        <exclude name="**/_prj.tests/*.*"/>
+        <exclude name="**/_prj*/*"/>
+        <exclude name="**/tests.obsolete/*.*" />
+        <exclude name="**/_ReSharper.**" />
+        <exclude name="resource.designer.cs" />
+      </fileset>
+    </if>
+    
+    <if test="${nant.settings.currentframework=='net-2.0'}">
+      <fileset id="build.sources" basedir="${source.path}">
+        <include name="**/*.${language.fileextension}"/>
+        <exclude name="**/_prj.tests/*.*"/>
+        <exclude name="**/_prj*/*"/>
+        <exclude name="**/tests.obsolete/*.*" />
+        <exclude name="**/_ReSharper.**" />
+      </fileset>
+    </if>
+
+    <if test="${nant.settings.currentframework=='net-3.5'}">
+      <fileset id="build.sources" basedir="${source.path}">
+        <include name="**/*.${language.fileextension}"/>
+        <exclude name="**/_prj.tests/*.*"/>
+        <exclude name="**/_prj*/*"/>
+        <exclude name="**/tests.obsolete/*.*" />
+        <exclude name="**/_ReSharper.**" />
+      </fileset>
+    </if>
+  </target>
+
+  <target name="_references">
+
+    <property name="_references.directory" value="${source.path}\_prj.references" />
+    <if test="${template.global-reference-directory != ''}">
+      <property name="_references.directory" value="${template.global-reference-directory}" />
+    </if>
+    <if test="${nant.settings.currentframework=='net-1.1'}">
+      <echo message="references directory ${_references.directory}" />
+      <fileset id="build.references" basedir="${_references.directory}">
+        <include name="net-1.1/*.dll" />
+      </fileset>
+      <fileset id="ndoc.assemblies" basedir="${_references.directory}">
+        <include name="net-1.1/*.dll" />
+      </fileset>
+      <fileset id="website.references" basedir="${_references.directory}">>
+      </fileset>
+    </if>
+    
+    <if test="${nant.settings.currentframework=='net-2.0'}">
+      <echo message="references directory ${_references.directory}" />
+      <fileset id="build.references" basedir="${_references.directory}">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+      <fileset id="ndoc.assemblies" basedir="${_references.directory}">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+	   <fileset id="website.references" basedir="${_references.directory}">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+    </if>
+
+    <if test="${nant.settings.currentframework=='net-3.5'}">
+      <echo message="references directory ${_references.directory}" />
+      <fileset id="build.references" basedir="${_references.directory}">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+      <fileset id="ndoc.assemblies" basedir="${_references.directory}">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+      <fileset id="website.references" basedir="${_references.directory}">
+        <include name="**/*.dll"/>
+        <exclude name="net-1.1/*.dll" />
+      </fileset>
+    </if>
+  </target>
+
+
+  <!-- handled the compilation of resources embedded in the project.-->
+  <target name="_resources">
+    <resourcefileset id="build.resources" prefix="Silvtek.ORMEngine" dynamicprefix="true">
+      <include name="${source.path}\*.resx"/>
+    </resourcefileset>
+  </target>
+  
+  <target name="_externalfiles">
+    <fileset id="build.externalfiles" basedir="${source.path}">
+      <include name="readme.txt"/>
+    </fileset>
+  </target>
+  
+</project>
