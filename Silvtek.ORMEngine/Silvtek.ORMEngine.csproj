@@ -73,6 +73,7 @@
       <HintPath>_prj.references\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -88,6 +89,12 @@
     <Compile Include="CompressAttribute.cs" />
     <Compile Include="Compression\CompressionProvider.cs" />
     <Compile Include="Compression\DefaultCompressionProvider.cs" />
+    <Compile Include="Configs\EmptyORMConfiguration.cs" />
+    <Compile Include="Configs\LegacyORMConfiguration.cs" />
+    <Compile Include="Configs\ORMConfigurationBase.cs" />
+    <Compile Include="Configs\ORMConfigurationException.cs" />
+    <Compile Include="Configs\ORMConfigurationHandler.cs" />
+    <Compile Include="Configs\ORMConfigurationV1.cs" />
     <Compile Include="Configs\ORMConfigurator.cs" />
     <Compile Include="DataQuery\CommandTypes.cs" />
     <Compile Include="DataQuery\ParameterList.cs" />
@@ -97,6 +104,9 @@
     <Compile Include="DataQuery\SPObjectQuery.cs" />
     <Compile Include="DataQuery\SPQuery.cs" />
     <Compile Include="Data\ConnectionSettings.cs" />
+    <Compile Include="Data\RetryExceptions.cs" />
+    <Compile Include="Data\ExceptionEntry.cs" />
+    <Compile Include="Data\RetryExceptionMatch.cs" />
     <Compile Include="DigestValidationResult.cs" />
     <Compile Include="Encryption\DefaultRecordDigestProvider.cs" />
     <Compile Include="Encryption\RecordDigestProvider.cs" />
@@ -292,7 +302,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="_prj.buildsupport\build.xml" />
+    <Content Include="_prj.buildsupport\build.xml">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="_prj.buildsupport\buildnumber.txt" />
     <Content Include="_prj.buildsupport\assemblyversion.net-1.1.txt" />
     <Content Include="_prj.buildsupport\assemblyversion.net-2.0.txt" />
@@ -306,6 +318,7 @@
     <Content Include="_prj.references\nunit.framework.dll" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="_prj.buildsupport\build.bat" />
     <None Include="_prj.documents\Connections.config">
       <SubType>Designer</SubType>
@@ -317,6 +330,9 @@
       <DependentUpon>ORM-Mapping-Schema.xsd</DependentUpon>
     </None>
     <None Include="_prj.documents\connections.config.schema.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="_prj.documents\connectionsv2.config">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>

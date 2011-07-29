@@ -39,7 +39,11 @@ namespace Silvtek.ORMEngine.Data
             get;
         }
 
-        public abstract IFormatter IFormatter
+        /// <summary>
+        /// Gets the serialization formatter.
+        /// </summary>
+        /// <value>The serialization formatter.</value>
+        public abstract IFormatter SerializationFormatter
         { 
             get;
         }
@@ -60,31 +64,68 @@ namespace Silvtek.ORMEngine.Data
             get;
         }
 
+        /// <summary>
+        /// Gets the formatter provider assembly.
+        /// </summary>
+        /// <value>The formatter provider assembly.</value>
         public abstract string FormatterProviderAssembly
         {
             get;
         }
 
+        /// <summary>
+        /// Gets the formatter provider class.
+        /// </summary>
+        /// <value>The formatter provider class.</value>
         public abstract string FormatterProviderClass
         {
             get;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance is default.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this instance is default; otherwise, <c>false</c>.
+        /// </value>
         public abstract bool IsDefault
         {
             get;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether [prepared statements].
+        /// </summary>
+        /// <value><c>true</c> if [prepared statements]; otherwise, <c>false</c>.</value>
         public abstract bool PreparedStatements
         { 
             get;
         }
 
+        /// <summary>
+        /// Gets the command timeout.
+        /// </summary>
+        /// <value>The command timeout.</value>
         public abstract int CommandTimeout
         { 
             get;
         }
 
+
+        /// <summary>
+        /// Gets the list of exceptions and its code or message values that if matched the ORM will retry 
+        /// before throwing an database exception.
+        /// </summary>
+        /// <value>The retry exceptions.</value>
+        public abstract RetryExceptions RetryExceptions
+        {
+            get;
+        }
+
+        /// <summary>
+        /// Gets the connection provider.
+        /// </summary>
+        /// <returns></returns>
         public ConnectionProvider GetConnectionProvider()
         {
 
@@ -106,6 +147,10 @@ namespace Silvtek.ORMEngine.Data
         
         }
 
+        /// <summary>
+        /// Gets the db type formatter.
+        /// </summary>
+        /// <returns></returns>
         public DbTypeFormatter GetDbTypeFormatter()
         {
 

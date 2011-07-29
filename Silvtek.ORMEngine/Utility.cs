@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 #if !NET11
 using System.IO.Compression;
@@ -8,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 using Silvtek.ORMEngine.Configs;
+using Silvtek.ORMEngine.Data;
 
 namespace Silvtek.ORMEngine
 {
@@ -17,6 +19,7 @@ namespace Silvtek.ORMEngine
     internal sealed class Utility
     {
         private static readonly Resources res = new Resources();
+
         private Utility()
         {
 
@@ -78,6 +81,21 @@ namespace Silvtek.ORMEngine
             return retValue;
         }
 
+        internal static bool ShouldRetry(Exception e, Connection cnn, Action action, int retryCounter)
+        {
+            bool retryInsert = false;
+            try
+            {
+                retryInsert = cnn.Settings.RetryExceptions.ShouldRetry(e, action, retryCounter);
+            }
+            catch (Exception e1)
+            {
+                retryInsert = false;
+                Trace.Write("Error while trying to check if we should retry an database transaction that error it out. Error:" + e1.Message);
+            }
+
+            return retryInsert;
+        }
 
         /// <summary>
         /// Gets the node value.
@@ -88,6 +106,12 @@ namespace Silvtek.ORMEngine
         internal static string GetNodeValue(XmlNode sourceNode, string xpath)
         {
             return GetNodeValue(sourceNode, xpath, false, String.Empty);
+        }
+
+        internal static string GetNodeValue(XmlNode sourceNode)
+        {
+            if (sourceNode == null) return String.Empty;
+            return sourceNode.InnerText;
         }
 
         /// <summary>
@@ -202,6 +226,10 @@ namespace Silvtek.ORMEngine
         /// <returns></returns>
         internal static string GetAttributeValue(XmlNode node, string attributeName)
         {
+            if (node == null) return String.Empty;
+
+            if (node.Attributes == null) return String.Empty;
+
             XmlAttribute attribute = node.Attributes[attributeName];
             if (attribute == null) return String.Empty;
 
@@ -210,6 +238,35 @@ namespace Silvtek.ORMEngine
 
             return tempValue;
         }
+
+        internal static string GetAttributeValue(XmlNode parentNode, string xpath, string attributeName)
+        {
+            XmlNode node = parentNode.SelectSingleNode(xpath);
+            if (node == null) return String.Empty;
+
+            if (node.Attributes == null) return String.Empty;
+            XmlAttribute attribute = node.Attributes[attributeName];
+            if (attribute == null) return String.Empty;
+
+            string tempValue = attribute.Value;
+            if (tempValue == null) tempValue = String.Empty;
+
+            return tempValue;
+        }
+
+        internal static bool GetAttributeValueAsBool(XmlNode parentNode, string xpath, string attributeName, bool isRequired)
+        {
+            XmlNode node = parentNode.SelectSingleNode(xpath);
+            if (node == null && isRequired)
+            {
+                string exMsg = Utility.GetResourceString("UTILITY:REQUIRED_VALUE", attributeName, xpath);
+                throw new ORMException(exMsg);
+            }
+
+            return GetAttributeValueAsBool(node, attributeName, isRequired);
+        }
+
+
 
         /// <summary>
         /// Byteses to hex.

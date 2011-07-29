@@ -4,6 +4,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -21,11 +22,12 @@ namespace Silvtek.ORMEngine.Schema
     {
 
         private readonly MapMember mapMember;
+        private readonly Stack stack;
 
         // The original value.
         //private object beforeCommitValue;
 
-        // this is the origiinal value before comitting to the database. T
+        //// this is the origiinal value before comitting to the database. T
         private object originalValue;
 
         // The field name (property)
@@ -51,7 +53,16 @@ namespace Silvtek.ORMEngine.Schema
         /// </summary>
         internal object OriginalValue
         {
-            get { return originalValue; }
+            get
+            {
+                object tmpOriginalValue = stack.Peek();
+                if (tmpOriginalValue  == null)
+                {
+                    tmpOriginalValue = originalValue;
+                }
+
+                return tmpOriginalValue;
+            }
         }
 
         ///<summary>
@@ -165,11 +176,13 @@ namespace Silvtek.ORMEngine.Schema
             this.sourceObject = sourceObject;
             object tmpValue = GetValue();
             //beforeCommitValue = tmpValue;
-            currentValue = tmpValue;
             originalValue = tmpValue;
+            currentValue = tmpValue;
             name = mapMember.MemberName;
             isPrimaryKey = mapMember.Properties.IsPrimaryKey;
             changed = false;
+            stack = new Stack();
+
         }
 
         private MemberField(MemberField source, object value)
@@ -184,6 +197,7 @@ namespace Silvtek.ORMEngine.Schema
             name = source.name;
             isPrimaryKey = source.IsPrimaryKey;
             changed = false;
+            stack = new Stack();
         }
 
         /// <summary>
@@ -217,6 +231,7 @@ namespace Silvtek.ORMEngine.Schema
         {
 
             changed = false;
+            stack.Push(originalValue);
             originalValue = currentValue;
             //alreadyUpdated = false;
             //beforeCommitValue = currentValue;

@@ -4,10 +4,17 @@ using System.Diagnostics;
 
 namespace Silvtek.ORMEngine.Data
 {
+    /// <summary>
+    /// Contains a list of <see cref="ConnectionInfo"/> instance.
+    /// </summary>
     internal class ConnectionInfoList : DictionaryBase
     {
         private string defaultConnectionName;
 
+        /// <summary>
+        /// Gets the <see cref="Silvtek.ORMEngine.Data.ConnectionInfo"/> with the specified name.
+        /// </summary>
+        /// <value></value>
         internal ConnectionInfo this[string name]
         {
             get
@@ -17,11 +24,23 @@ namespace Silvtek.ORMEngine.Data
             
         }
 
+        /// <summary>
+        /// Determines whether [contains] [the specified name].
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>
+        /// 	<c>true</c> if [contains] [the specified name]; otherwise, <c>false</c>.
+        /// </returns>
         internal bool Contains(string name)
         {
             return Dictionary.Contains(name);
         }
 
+        /// <summary>
+        /// Gets the connection information.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns></returns>
         internal ConnectionInfo GetConnectionInformation(string name)
         {
             if (!Dictionary.Contains(name))
@@ -32,31 +51,43 @@ namespace Silvtek.ORMEngine.Data
             return (ConnectionInfo)Dictionary[name];
         }
 
-        internal void Add(ConnectionSettingsBase settingsBase)
+        /// <summary>
+        /// Adds the specified settings base.
+        /// </summary>
+        /// <param name="settings">The settings base.</param>
+        internal void Add(ConnectionSettingsBase settings)
         {
-            ConnectionInfo info = new ConnectionInfo(settingsBase);
+            ConnectionInfo info = new ConnectionInfo(settings);
 
-            if (settingsBase.IsDefault)
+            if (settings.IsDefault)
             {
-                SetDefaultConnection(settingsBase.ConnectionName);
+                SetDefaultConnection(settings.ConnectionName);
             }
 
-            if (Dictionary.Contains(settingsBase.ConnectionName))
+            if (Dictionary.Contains(settings.ConnectionName))
             {
-                string msg = Utility.GetResourceString("CONNECTION_MANAGER:DUPLICATE_CONNECTION_NAME", settingsBase.ConnectionName);
+                string msg = Utility.GetResourceString("CONNECTION_MANAGER:DUPLICATE_CONNECTION_NAME", settings.ConnectionName);
                 throw new ORMException(msg);
             }
 
-            Dictionary.Add(settingsBase.ConnectionName, info);
+            Dictionary.Add(settings.ConnectionName, info);
 
 
         }
 
+        /// <summary>
+        /// Gets the default name of the connection.
+        /// </summary>
+        /// <value>The default name of the connection.</value>
         internal string DefaultConnectionName
         {
             get { return defaultConnectionName; }
         }
 
+        /// <summary>
+        /// Changes the default connection.
+        /// </summary>
+        /// <param name="newConnectionName">New name of the connection.</param>
         internal void ChangeDefaultConnection(string newConnectionName)
 		{
 
@@ -69,6 +100,10 @@ namespace Silvtek.ORMEngine.Data
 			defaultConnectionName = newConnectionName;
 		}
 
+        /// <summary>
+        /// Adds the specified connectionsettings.
+        /// </summary>
+        /// <param name="connectionsettings">The connectionsettings.</param>
         internal void Add(ConnectionSettings connectionsettings)
 		{
             ConnectionInfo settings = new ConnectionInfo(connectionsettings);

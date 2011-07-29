@@ -1,9 +1,9 @@
 using System;
+using System.Configuration;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Xml;
-using Silvtek.ORMEngine.Data;
 
 namespace Silvtek.ORMEngine.Configs
 {
@@ -13,24 +13,16 @@ namespace Silvtek.ORMEngine.Configs
     /// </summary>
     public class ORMConfigurator
     {
+        // constants
+        private const string _XML_CONFIG_FILE = "Connections.Config";
         private static ORMConfigurator singleton;
-        private const string XML_CONFIG_FILE = "Connections.Config";
 
-        private static string configurationFile;
+        private ORMConfigurationBase configuration;
+        private static string configuration_file;
 
-        private string mapFilePath;
-        private string balancerShare;
-        private string workingFolder;
-        private string tempFolder;
-        private bool globalCacheEnabled;
-        private bool changeBroadcastingEnabled;
-        private Encoding defaultEncoding;
-       
-        private int buffersize;
-        private int queryCacheTimeMs;
 
         // Returns the unique instance of the Connection Manager.
-        internal static ORMConfigurator Singleton
+        internal static ORMConfigurator Current
         {
             get
             {
@@ -53,7 +45,7 @@ namespace Silvtek.ORMEngine.Configs
         /// </summary>
         public static string MapFiles
         {
-            get { return Singleton.mapFilePath; }
+            get { return Current.Configuration.MapFilePath; }
         }
 
         /// <summary>
@@ -61,8 +53,8 @@ namespace Silvtek.ORMEngine.Configs
         /// </summary>
         public static string BalancerShare
         {
-            get { return Singleton.balancerShare; }
-            set { Singleton.balancerShare = value; }
+            get { return Current.Configuration.BalancerShare; }
+            set { Current.Configuration.BalancerShare = value; }
         }
 
         /// <summary>
@@ -70,7 +62,7 @@ namespace Silvtek.ORMEngine.Configs
         /// </summary>
         public static bool UseBalancerShare
         {
-            get { return (Singleton.balancerShare != null && Singleton.balancerShare.Length > 0); }
+            get { return (Current.Configuration.BalancerShare != null && Current.Configuration.BalancerShare.Length > 0); }
         }
         
         /// <summary>
@@ -78,8 +70,8 @@ namespace Silvtek.ORMEngine.Configs
         /// </summary>
         public static string WorkingFolder
         {
-            get { return Singleton.workingFolder; }
-            set { Singleton.workingFolder = value; }
+            get { return Current.Configuration.WorkingFolder; }
+            set { Current.Configuration.WorkingFolder = value; }
         }
 
         /// <summary>
@@ -88,8 +80,8 @@ namespace Silvtek.ORMEngine.Configs
         /// <value>The temporary folder.</value>
         public static string TemporaryFolder
         {
-            get { return Singleton.tempFolder; }
-            set { Singleton.tempFolder = value; }
+            get { return Current.Configuration.TempFolder; }
+            set { Current.Configuration.TempFolder = value; }
         }
   
 
@@ -99,8 +91,8 @@ namespace Silvtek.ORMEngine.Configs
         /// </summary>
         public static bool GlobalCacheEnabled
         {
-            get { return Singleton.globalCacheEnabled; }
-            set { Singleton.globalCacheEnabled = value; }
+            get { return Current.Configuration.GlobalCacheEnabled; }
+            set { Current.Configuration.GlobalCacheEnabled = value; }
         }
 
         /// <summary>
@@ -109,8 +101,8 @@ namespace Silvtek.ORMEngine.Configs
         /// </summary>
         public static bool UpdateBroadCastingEnabled
         {
-            get { return Singleton.changeBroadcastingEnabled; }
-            set { Singleton.changeBroadcastingEnabled = value; }
+            get { return Current.Configuration.ChangeBroadcastingEnabled; }
+            set { Current.Configuration.ChangeBroadcastingEnabled = value; }
         }
 
         /// <summary>
@@ -118,7 +110,7 @@ namespace Silvtek.ORMEngine.Configs
         /// </summary>
         public static int BufferSize
         {
-            get { return Singleton.buffersize; }
+            get { return Current.Configuration.Buffersize; }
         }
 
         /// <summary>
@@ -127,26 +119,23 @@ namespace Silvtek.ORMEngine.Configs
         /// <value>The query cache time ms.</value>
         public static int QueryCacheTimeMs
         {
-            get { return Singleton.queryCacheTimeMs; }
+            get { return Current.Configuration.QueryCacheTimeMs; }
         }
 
         public static Encoding DefaultEncoding
         {
-            get { return Singleton.defaultEncoding; }
-            set { Singleton.defaultEncoding = value; }
+            get { return Current.Configuration.DefaultEncoding; }
+            set { Current.Configuration.DefaultEncoding = value; }
+        }
+
+        public ORMConfigurationBase Configuration
+        {
+            get { return configuration; }
+            set { configuration = value; }
         }
 
         private ORMConfigurator()
-        {
-            buffersize = 5120;
-            changeBroadcastingEnabled = true;
-            globalCacheEnabled = true;
-            this.balancerShare = String.Empty;
-            this.mapFilePath = String.Empty;
-            this.defaultEncoding = Encoding.ASCII;
-            this.queryCacheTimeMs = 800;
-            this.workingFolder = String.Empty;
-            
+        { 
             LoadConfigurations();
         }
 
@@ -181,7 +170,7 @@ namespace Silvtek.ORMEngine.Configs
 
             lock (typeof(ORMConfigurator))
             {
-                configurationFile = filepath;
+                configuration_file = filepath;
             }
         }
 
@@ -217,7 +206,7 @@ namespace Silvtek.ORMEngine.Configs
                 if (singleton == null)
                 {
                     singleton = new ORMConfigurator();
-                    singleton.mapFilePath = directory;
+                    singleton.Configuration.MapFilePath = directory;
                 }
             }
         }
@@ -229,7 +218,7 @@ namespace Silvtek.ORMEngine.Configs
                 throw new ArgumentException("Invalid size value. Size must be greater than 0");
             }
 
-            Singleton.buffersize = newSize;
+            Current.Configuration.Buffersize = newSize;
         }
 
         #region -- Private Methods -- 
@@ -240,253 +229,84 @@ namespace Silvtek.ORMEngine.Configs
         {
             string directoryName = GetPath();
 
+            // first try base file.
             string xmlDocFile;
 
-            if (configurationFile == null)
+            if (configuration_file == null)
             {
-                xmlDocFile = directoryName + @"\" + XML_CONFIG_FILE;
+                xmlDocFile = directoryName + @"\" + _XML_CONFIG_FILE;
             }
             else
             {
-                xmlDocFile = configurationFile;
+                xmlDocFile = configuration_file;
             }
 
             // if file does not exists return.
-            if (!File.Exists(xmlDocFile)) return;
-
-            XmlDocument confXml = new XmlDocument();
-            confXml.Load(xmlDocFile);
-            LoadWorkingFolder(confXml);
-            LoadMapFilesFolder(confXml);
-            LoadBalancerShareFolder(confXml);
-            LoadGlobalCache(confXml);
-            LoadUpdateBroadcastConfiguration(confXml);
-            LoadBufferSize(confXml);
-            LoadQueryCacheDefaultTime(confXml);
-            LoadEncodingType(confXml);
-            
-
-            // load declared connections.
-            XmlNodeList nodelist = confXml.SelectNodes("/dataSettings/connection");
-
-            if (nodelist != null)
+            XmlDocument confXml = null;
+            if (!File.Exists(xmlDocFile))
             {
-                /* Interact thru XML Doc */
-                foreach (XmlNode node in nodelist)
-                {
-                    DefaultConnectionSettings settings = new DefaultConnectionSettings(node);
-                    ConnectionManager.Current.RegisterConnection(settings);
-                }
-            }
-        }
-
-
-        private void LoadMapFilesFolder(XmlNode node)
-        {
-            const string mapFileXPath = "/dataSettings/mapFiles";
-            XmlNode mapFileNode = node.SelectSingleNode(mapFileXPath);
-
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (mapFileNode == null) return;
-            mapFilePath = Utility.GetAttributeValue(mapFileNode, "path");
-
-            if (mapFilePath == null || mapFilePath.Length == 0) return;
-
-            if (!Directory.Exists(mapFilePath))
-            {
-                string exMsg = Utility.GetResourceString("CONNECTION_MANAGER:MAP_FILE_PATH_NOT_FOUND", mapFilePath);
-                throw new ORMException(exMsg);
-            }
-
-        }
-
-        private void LoadEncodingType(XmlNode node)
-        {
-            const string encodingXpath = "/dataSettings/Encoding";
-            XmlNode mapFileNode = node.SelectSingleNode(encodingXpath);
-
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (mapFileNode == null)
-            {
-
-                defaultEncoding = Encoding.Default;
-                return;
-
-            }
-
-            string encodingString = Utility.GetAttributeValue(mapFileNode, "value");
-           
-            
-
-            if (encodingString == null || encodingString.Length == 0) return;
-
-            Encoding tmpEncoding = Encoding.GetEncoding(encodingString);
-
-            defaultEncoding = tmpEncoding;
-
-        }
-
-        private void LoadWorkingFolder(XmlNode node)
-        {
-            const string WORKING_FOLDER_XPATH = "/dataSettings/workingFolder";
-            XmlNode tempFileNode = node.SelectSingleNode(WORKING_FOLDER_XPATH);
-
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (tempFileNode != null)
-            {
-                workingFolder = Utility.GetAttributeValue(tempFileNode, "path");
-            }
-
-// ReSharper disable ReplaceWithStringIsNullOrEmpty
-            if (workingFolder == null || workingFolder.Length == 0)
-// ReSharper restore ReplaceWithStringIsNullOrEmpty
-            {
-                workingFolder = Path.GetTempPath();
-                tempFolder = workingFolder;
-                // try to access the temporary path, by creating a test file.
-                string filename = String.Format("ormtest-{0:N}", Guid.NewGuid());
-                string testFile = Path.Combine(workingFolder, filename);
-                try
-                {
-                    using (StreamWriter writer = new StreamWriter(testFile))
-                    {
-                        writer.Write("orm test");
-                        writer.Close();
-                        File.Delete(testFile);
-                    }
-
-                    
-                }
-                catch(Exception ex)
-                {
-                    throw new ORMException(ex.Message+ " Unable to access system temporary folder: " + workingFolder+ " check permissions. As alternative, you can also configure your temporary folder in connections.config");
-                }
-
-                return;
-            }
-
-            if (!Directory.Exists(workingFolder))
-            {
-                Directory.CreateDirectory(workingFolder);
-            }
-
-            tempFolder = String.Format(@"{0}\tmp\", workingFolder);
-            if (Directory.Exists(tempFolder))
-            {
-                Directory.Delete(tempFolder, true);
-                Directory.CreateDirectory(tempFolder);
+                // try from teh configuration 
+                confXml = GetFromApplicationConfigFile();
             }
             else
             {
-                Directory.CreateDirectory(tempFolder);
+                confXml = new XmlDocument();
+                confXml.Load(xmlDocFile);
             }
-           
-            
- 
+
+            if (confXml != null && confXml.DocumentElement != null) 
+            {
+                if (confXml.DocumentElement.LocalName == "dataSettings")
+                {
+                    this.configuration = new LegacyORMConfiguration();
+                }
+                else if (confXml.DocumentElement.LocalName == "ORMConfiguration")
+                {
+                    string version = Utility.GetAttributeValue(confXml.DocumentElement, "version");
+                    if (version == "1.0")
+                    {
+                        this.configuration = new ORMConfigurationV1();
+                    }
+                }
+
+
+                if (configuration != null)
+                {
+                    configuration.ReadConfiguration(confXml);
+                    configuration.Validate();
+                }
+                else
+                {
+                    configuration = new EmptyORMConfiguration();
+                }
+            }
+            else
+            {
+                configuration = new EmptyORMConfiguration();
+            }
+
+          
         }
 
-        private void LoadBalancerShareFolder(XmlNode docNode)
+        private XmlDocument GetFromApplicationConfigFile()
         {
-            const string balanceShareXPath = "/dataSettings/sharedResources";
-            XmlNode node = docNode.SelectSingleNode(balanceShareXPath);
+#if NET11
+            object obj = ConfigurationSettings.GetConfig("ORMConfiguration");
+#else
+            object obj = ConfigurationManager.GetSection("ORMConfiguration");
+#endif
 
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (node == null)
-            {
-                balancerShare = String.Empty;
-                return;
-            }
+            if (obj == null) return null;
 
-            balancerShare = Utility.GetAttributeValue(node, "path");
+            string xml = Convert.ToString(obj);
+            XmlDocument document = new XmlDocument();
+            document.LoadXml(xml);
 
-            if (balancerShare == null || balancerShare.Length == 0) return;
-
-            if (!Directory.Exists(balancerShare))
-            {
-                string exMsg = Utility.GetResourceString("CONNECTION_MANAGER:BALANCER_PATH_NOT_FOUND", balancerShare);
-                throw new ORMException(exMsg);
-            }
-        }
-
-        private void LoadBufferSize(XmlNode docNode)
-        {
-            const string balanceShareXPath = "/dataSettings/BufferSize";
-            XmlNode node = docNode.SelectSingleNode(balanceShareXPath);
-
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (node == null) return;
-            buffersize = Utility.GetAttributeValueAsInt32(node, "size", false);
-
-            if (buffersize == 0)
-            {
-                buffersize = 5120;
-            }
-        }
-
-        private void LoadQueryCacheDefaultTime(XmlNode docNode)
-        {
-            const string balanceShareXPath = "/dataSettings/DefaultQueryCacheTime";
-            XmlNode node = docNode.SelectSingleNode(balanceShareXPath);
-
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (node == null) return;
-            queryCacheTimeMs = Utility.GetAttributeValueAsInt32(node, "milliseconds", false);
-
-            if (queryCacheTimeMs == 0)
-            {
-                queryCacheTimeMs = 750;
-            }
+            return document;
         }
 
 
 
-        private void LoadGlobalCache(XmlNode docNode)
-        {
-            const string balanceShareXPath = "/dataSettings/globalCache";
-            XmlNode node = docNode.SelectSingleNode(balanceShareXPath);
-
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (node == null) return;
-            string tempBool = Utility.GetAttributeValue(node, "enabled");
-            if (tempBool == null || tempBool.Length == 0)
-            {
-                globalCacheEnabled = true;
-                return;
-            }
-
-            try
-            {
-                globalCacheEnabled = Convert.ToBoolean(tempBool);
-            }
-            catch (Exception)
-            {
-                throw new ORMException("Invalid value set in the attribute 'enabled' of the globalCache element");
-            }
-        }
-
-        private void LoadUpdateBroadcastConfiguration(XmlNode docNode)
-        {
-            const string balanceShareXPath = "/dataSettings/UpdateBroadcast";
-            XmlNode node = docNode.SelectSingleNode(balanceShareXPath);
-
-            // if the mapfiles node doe not exists, then return, there is not xml mapping files.
-            if (node == null) return;
-            string tempBool = Utility.GetAttributeValue(node, "enabled");
-            if (tempBool == null || tempBool.Length == 0)
-            {
-                this.changeBroadcastingEnabled = true;
-                return;
-            }
-
-            try
-            {
-                changeBroadcastingEnabled = Convert.ToBoolean(tempBool);
-            }
-            catch (Exception)
-            {
-                throw new ORMException("Invalid value set in the attribute 'enabled' of the UpdateBroadcast element");
-            }
-        }
 
         // Returns the path of the current assembly.
         private static string GetPath()

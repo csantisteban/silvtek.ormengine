@@ -21,6 +21,7 @@ namespace Silvtek.ORMEngine.Data
         private int timeout;
         private bool preparedStatement;
         private int commandTimeout;
+        private readonly RetryExceptions retryExceptions;
 
         /// <summary>
         /// Gets the connections stadistics.
@@ -71,16 +72,33 @@ namespace Silvtek.ORMEngine.Data
             get { return dbtype; }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether [prepared statement].
+        /// </summary>
+        /// <value><c>true</c> if [prepared statement]; otherwise, <c>false</c>.</value>
         public bool PreparedStatement
         {
             get { return preparedStatement; }
             set { preparedStatement = value; }
         }
 
+        /// <summary>
+        /// Gets or sets the command timeout.
+        /// </summary>
+        /// <value>The command timeout.</value>
         public int CommandTimeout
         {
             get { return commandTimeout; }
             set { commandTimeout = value; }
+        }
+
+        /// <summary>
+        /// Gets the retry exceptions.
+        /// </summary>
+        /// <value>The retry exceptions.</value>
+        public RetryExceptions RetryExceptions
+        {
+            get { return retryExceptions; }
         }
 
 
@@ -93,20 +111,22 @@ namespace Silvtek.ORMEngine.Data
             this.provider = settings.ConnectionProvider;
             preparedStatement = false;
             this.commandTimeout = settings.CommandTimeout;
+            this.retryExceptions = settings.RetryExceptions;
             stats = new ConnectionStats();
 
         }
 
-        internal ConnectionInfo(ConnectionSettingsBase settingsBase)
+        internal ConnectionInfo(ConnectionSettingsBase settings)
         {
  
-            provider = settingsBase.GetConnectionProvider();
-            dbtype = settingsBase.GetDbTypeFormatter();
-            timeout = settingsBase.Timeout;
-            cnnString = settingsBase.ConnectionString;
-            name = settingsBase.ConnectionName;
-            preparedStatement = settingsBase.PreparedStatements;
-            commandTimeout = settingsBase.CommandTimeout;
+            provider = settings.GetConnectionProvider();
+            dbtype = settings.GetDbTypeFormatter();
+            timeout = settings.Timeout;
+            cnnString = settings.ConnectionString;
+            name = settings.ConnectionName;
+            preparedStatement = settings.PreparedStatements;
+            commandTimeout = settings.CommandTimeout;
+            this.retryExceptions = settings.RetryExceptions;
             stats = new ConnectionStats();
         }
 

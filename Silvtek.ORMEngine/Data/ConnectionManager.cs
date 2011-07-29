@@ -190,9 +190,10 @@ namespace Silvtek.ORMEngine.Data
 		    return connectionInformationList.GetConnectionInformation(name);
 		}
 
-	    public void RegisterConnection(ConnectionSettingsBase settingsBase)
+	    public void RegisterConnection(ConnectionSettingsBase settings)
         {
-            connectionInformationList.Add(settingsBase);
+            if (settings == null) return;
+            connectionInformationList.Add(settings);
         }
  
         /// <summary>

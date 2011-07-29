@@ -344,7 +344,7 @@ namespace Silvtek.ORMEngine
             {
                 try
                 {
-                    string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 1);
+                    MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 1);
                     //recordDigest = MapUtility.GetDigest(fulldigestValue);
                     recordVersion = new RecordVersion(GetRecordIdentifier(), 1);
                 }
@@ -405,39 +405,61 @@ namespace Silvtek.ORMEngine
             this.memberFieldList.RefreshObjectSource();
             CheckUniqueValues(Action.Create);
            
-            int rv;
+
             string sqlText = String.Empty;
-            Connection cnn = objectInfo.Schema.GetConnection();
-            try
+
+            bool retry = false;
+            int retryCounter = 0;
+            int returValue = 0;
+
+            do
             {
-                Command cmd = objectInfo.GetInsertCommand(cnn, SourceObject);
-                cnn.Open();
 
-                sqlText = cmd.CommandText;
-                rv = cmd.ExecuteNonQuery();
+                Connection cnn = objectInfo.Schema.GetConnection();
+            
+                try
+                {
+                    Command cmd = objectInfo.GetInsertCommand(cnn, SourceObject);
+                    cnn.Open();
 
-                // FIX HERE -- Test if uses db identity should come from schema.
-                // FIX HERE -- SetIndentity method should return the value. not set
-                if (objectInfo.Schema.SqlBuilder.HasIdentityColumn) objectInfo.Schema.SqlBuilder.SetIdentityValue(cnn, objectInfo.Schema, SourceObject);
-            }
-            catch (Exception e)
-            {
-                //Fire Events.
-                FireFailed(Action.Create, Utility.Resources["FAILED_REASON_EXCEPTION"]);
-                FireError(Action.Create, e, String.Empty);
+                    sqlText = cmd.CommandText;
+                    returValue = cmd.ExecuteNonQuery();
 
-                // retrow exception.
-                //string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
-                string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sqlText);
-                throw new ORMException(exMsg, sqlText, e);
-            }
-            finally
-            {
-                //Closing connection.
-                cnn.Close();
-            }
+                    // FIX HERE -- Test if uses db identity should come from schema.
+                    // FIX HERE -- SetIndentity method should return the value. not set
+                    if (objectInfo.Schema.SqlBuilder.HasIdentityColumn) objectInfo.Schema.SqlBuilder.SetIdentityValue(cnn, objectInfo.Schema, SourceObject);
+                }
+                catch (Exception e)
+                {
+                    // check if we should retry this transaction.
+                    retry = Utility.ShouldRetry(e, cnn, Action.Create, retryCounter);
 
-            result = (rv == 1) ? ActionResult.Succeed : ActionResult.Failed;
+                    if (!retry)
+                    {
+                        //Fire Events.
+                        FireFailed(Action.Create, Utility.Resources["FAILED_REASON_EXCEPTION"]);
+                        FireError(Action.Create, e, String.Empty);
+
+                        // retrow exception.
+                        //string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
+                        string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sqlText);
+                        Trace.WriteLine(exMsg);
+                        throw;
+                    }
+
+                    Trace.WriteLine("Will retry an insert again. Original Exception: "+e.Message);
+                    retryCounter++;
+                }
+                finally
+                {
+                    //Closing connection.
+                    cnn.Close();
+                }
+
+                
+            } while (retry);
+
+            result = (returValue == 1) ? ActionResult.Succeed : ActionResult.Failed;
 
             if (result == ActionResult.Succeed)
             {
@@ -450,6 +472,7 @@ namespace Silvtek.ORMEngine
                 FireFailed(Action.Create, Utility.Resources["FAILED_REASON_UNABLETOSUCCESS"]);
             }
         }
+
 
 	    private void CheckUniqueValues(Action action)
 	    {
@@ -528,126 +551,138 @@ namespace Silvtek.ORMEngine
         ///</summary>
         public void Refresh()
         {
-           // FIRE EVENT
-           FireBeforeLoaded();
-           string sql = objectInfo.GetSelectStatement(SourceObject);
-           Connection cnn = objectInfo.Schema.GetConnection();
+            // FIRE EVENT
+            FireBeforeLoaded();
+            string sql = objectInfo.GetSelectStatement(SourceObject);
+            Connection cnn = objectInfo.Schema.GetConnection();
 
+            bool retry = false;
+            int retryCounter = 0;
 
+            do
+            {
+                try
+                {
 
-           try
-           {
-              
-               Command cmd = new Command(sql, cnn);
-               cnn.Open();
-               DataReader reader = cmd.ExecuteReader();
+                    Command cmd = new Command(sql, cnn);
+                    cnn.Open();
+                    DataReader reader = cmd.ExecuteReader();
 
-               // Read recordset
-               if (reader.Read())
-               {
-                   MapMemberList memberList = objectInfo.MappedMembers;
+                    // Read recordset
+                    if (reader.Read())
+                    {
+                        MapMemberList memberList = objectInfo.MappedMembers;
 
-                   for (int i = 0; i < memberList.Count; i++)
-                   {
-                       if (!memberList[i].Properties.IsPrimaryKey)
-                       {
+                        for (int i = 0; i < memberList.Count; i++)
+                        {
+                            if (memberList[i].Properties.IsPrimaryKey) continue;
 
-                           if (memberList[i].Properties.AcceptNulls && reader.IsDBNull(i))
-                           {
-                               memberList[i].SetDataSourceValue(SourceObject, null);
-                               continue;
-                           }
+                            if (memberList[i].Properties.AcceptNulls && reader.IsDBNull(i))
+                            {
+                                memberList[i].SetDataSourceValue(SourceObject, null);
+                                continue;
+                            }
 
-                           if (memberList[i].Properties.DataType != DataType.Binary)
-                           {
-                               memberList[i].SetDataSourceValue(SourceObject, reader.GetValue(i));
+                            if (memberList[i].Properties.DataType != DataType.Binary)
+                            {
+                                memberList[i].SetDataSourceValue(SourceObject, reader.GetValue(i));
 
-                               if (memberList[i].Properties.IsRecordDigestEnabled)
-                               {
-                                   string fullDigestString = Convert.ToString(reader.GetValue(i));
-                                   int version = MapUtility.GetRecordVersion(fullDigestString);
-                                   //recordDigest = MapUtility.GetDigest(fullDigestString);
-                                   recordVersion = new RecordVersion(GetRecordIdentifier(), version);
-                               }
-                           }
-                           else
-                           {
-                               if (!reader.IsDBNull(i))
-                               {
+                                if (memberList[i].Properties.IsRecordDigestEnabled)
+                                {
+                                    string fullDigestString = Convert.ToString(reader.GetValue(i));
+                                    int version = MapUtility.GetRecordVersion(fullDigestString);
+                                    //recordDigest = MapUtility.GetDigest(fullDigestString);
+                                    recordVersion = new RecordVersion(GetRecordIdentifier(), version);
+                                }
+                            }
+                            else
+                            {
+                                if (!reader.IsDBNull(i))
+                                {
 
-                                   DataStream dataStream = new DataStream(memberList[i]);
+                                    DataStream dataStream = new DataStream(memberList[i]);
 
-                                   Byte[] buffer = new byte[ORMConfigurator.BufferSize];
-                                   int startIndex = 0;
-                                   long bytesRead;
-                                   do
-                                   {
-                                       bytesRead = reader.GetBytes(i, startIndex, buffer, 0, buffer.Length);
-                                       if (bytesRead == 0) break;
-                                       dataStream.Write(buffer, 0, (int)bytesRead);
-                                       dataStream.Flush();
-                                       startIndex += buffer.Length;
-                                   } while (buffer.Length == bytesRead);
+                                    Byte[] buffer = new byte[ORMConfigurator.BufferSize];
+                                    int startIndex = 0;
+                                    long bytesRead;
+                                    do
+                                    {
+                                        bytesRead = reader.GetBytes(i, startIndex, buffer, 0, buffer.Length);
+                                        if (bytesRead == 0) break;
+                                        dataStream.Write(buffer, 0, (int) bytesRead);
+                                        dataStream.Flush();
+                                        startIndex += buffer.Length;
 
-                                   dataStream.Position = 0;
+                                    } while (buffer.Length == bytesRead);
 
-                                   memberList[i].SetDataSourceValue(SourceObject, dataStream);
-                               }
-                               else
-                               {
-                                   memberList[i].SetDataSourceValue(SourceObject, null);
+                                    dataStream.Position = 0;
 
-                               }
-                           }
-                       }
-                   }
+                                    memberList[i].SetDataSourceValue(SourceObject, dataStream);
+                                }
+                                else
+                                {
+                                    memberList[i].SetDataSourceValue(SourceObject, null);
+                                }
+                            }
+                        }
 
-                   // commit all files
-                   foreach (MemberField field in memberFieldList)
-                   {
-                       field.Commit();
-                   }
+                        // commit all files
+                        foreach (MemberField field in memberFieldList)
+                        {
+                            field.Commit();
+                        }
 
-                   result = ActionResult.Succeed;
-                   objectInfo.SetBindStatus(BindingStatus.Bound);
+                        result = ActionResult.Succeed;
+                        objectInfo.SetBindStatus(BindingStatus.Bound);
 
-                  // Debug.WriteLine("Record Loaded from database. Identifier: " + GetRecordIdentifier(),
-                  //                 Resources.TRACE_CATEGORY);
-               }
-               else
-               {
-                   FireRecordNotFound();
-                   result = ActionResult.RecordNotFound;
-               }
+                        // Debug.WriteLine("Record Loaded from database. Identifier: " + GetRecordIdentifier(),
+                        //                 Resources.TRACE_CATEGORY);
+                    }
+                    else
+                    {
+                        FireRecordNotFound();
+                        result = ActionResult.RecordNotFound;
+                    }
 
-               reader.Close();
+                    reader.Close();
 
-           }
-           catch (Exception e)
-           {
-               //Fire Events.
-               FireFailed(Action.Load, Utility.Resources["FAILED_REASON_EXCEPTION"]);
-               FireError(Action.Load, e, sql);
-               string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
-               throw new ORMException(exMsg, e);
-           }
-           finally
-           {
-               cnn.Close();
-           }
+                }
+                catch (Exception e)
+                {
+                    retry = Utility.ShouldRetry(e, cnn, Action.Load, retryCounter);
+
+                    if (!retry)
+                    {
+                        //Fire Events.
+                        FireFailed(Action.Load, Utility.Resources["FAILED_REASON_EXCEPTION"]);
+                        FireError(Action.Load, e, sql);
+                        string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
+                        Trace.WriteLine(exMsg);
+                        throw;
+                    }
+
+                    Trace.WriteLine("Will retry loading an object. If failed due an exception. "+e.Message);
+                    retryCounter++;
+                }
+                finally
+                {
+                    cnn.Close();
+                }
+
+            } while (retry);
 
             // Notify Load Operation.
-           NotifyOperation(Action.Load);
+            NotifyOperation(Action.Load);
 
-           // Fire Bind Event.
-           if (result == ActionResult.Succeed)Bind(false);
+            // Fire Bind Event.
+            if (result == ActionResult.Succeed) Bind(false);
 
-           // Fire After Load Event.
-           FireAfterLoaded();
+            // Fire After Load Event.
+            FireAfterLoaded();
 
         }
 
-        internal void SetRecordDigest(string fullDigestString)
+	    internal void SetRecordDigest(string fullDigestString)
         {
             int version = MapUtility.GetRecordVersion(fullDigestString);
             //recordDigest = MapUtility.GetDigest(fullDigestString);
@@ -941,29 +976,42 @@ namespace Silvtek.ORMEngine
             string sql = objectInfo.GetDeleteStatement(SourceObject);
             Connection cnn = objectInfo.Schema.GetConnection();
  
-            int rv;
-
-            try
+            int returnValue = 0;
+            int retryCounter = 0;
+            bool retry = false;
+            do
             {
-                ;
-                Command cmd = new Command(sql, cnn);
-                cnn.Open();
-                rv = cmd.ExecuteNonQuery();
-            }
-            catch (Exception e)
-            {
-                FireFailed(Action.Remove, Utility.Resources["FAILED_REASON_EXCEPTION"]);
-                FireError(Action.Remove, e, sql);
-                string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
-                throw new ORMException(exMsg, e);
+                try
+                {
 
-            }
-            finally
-            {
-                cnn.Close();
-            }
+                    Command cmd = new Command(sql, cnn);
+                    cnn.Open();
+                    returnValue = cmd.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    retry = Utility.ShouldRetry(e, cnn, Action.Remove, retryCounter);
 
-            result = (rv == 1) ? ActionResult.Succeed : ActionResult.Failed;
+                    if (!retry)
+                    {
+                        FireFailed(Action.Remove, Utility.Resources["FAILED_REASON_EXCEPTION"]);
+                        FireError(Action.Remove, e, sql);
+                        string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sql);
+                        Trace.WriteLine(exMsg);
+                        throw;
+                    }
+
+                    retryCounter++;
+
+                }
+                finally
+                {
+                    cnn.Close();
+                }
+
+            } while (retry);
+
+            result = (returnValue == 1) ? ActionResult.Succeed : ActionResult.Failed;
             if (result == ActionResult.Succeed)
             {
                 // if the removal of the record was sucessfull, then update the identifier string,
@@ -1245,8 +1293,7 @@ namespace Silvtek.ORMEngine
                 }
                 if (comparisonResult == DigestComparisonResult.EmptyDigest)
                 {
-                    string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 2);
-                    //recordDigest = MapUtility.GetDigest(fulldigestValue);
+                    MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, 2);
                     recordVersion = new RecordVersion(GetRecordIdentifier(), 2);
                 }
                 else
@@ -1286,52 +1333,55 @@ namespace Silvtek.ORMEngine
             }
 
             CheckUniqueValues(Action.Save);
-            Connection cnn = objectInfo.Schema.GetConnection();
 
-            lock(SyncRoot)
+            int retryCounter = 0;
+            bool retry = false;
+            do
             {
-                string sqltext = String.Empty;
-                try
-                {
 
-                    Command cmd = objectInfo.GetUpdateCommand(cnn, memberFieldList, SourceObject);
-                    if (cmd == null)
+                Connection cnn = objectInfo.Schema.GetConnection();
+
+                lock (SyncRoot)
+                {
+                    string sqltext = String.Empty;
+                    try
                     {
-                        result = ActionResult.NotModified;
-                        return;
+
+                        Command cmd = objectInfo.GetUpdateCommand(cnn, memberFieldList, SourceObject);
+                        if (cmd == null)
+                        {
+                            result = ActionResult.NotModified;
+                            return;
+                        }
+
+                        cnn.Open();
+
+                        sqltext = cmd.CommandText;
+                        rv = cmd.ExecuteNonQuery();
                     }
+                    catch (Exception e)
+                    {
+                        retry = Utility.ShouldRetry(e, cnn, Action.Save, retryCounter);
 
-                    cnn.Open();
+                        if (!retry)
+                        {
+                            FireFailed(Action.Save, Utility.Resources["FAILED_REASON_EXCEPTION"]);
+                            FireError(Action.Save, e, sqltext);
+                            string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sqltext);
+                            Trace.WriteLine(exMsg);
+                            throw;
+                        }
 
-                    sqltext = cmd.CommandText;
-                    rv = cmd.ExecuteNonQuery();
-                    //rv = 0;
-                    //using (IDataReader reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
-                    //{
-                    //    if (reader != null)
-                    //    {
-                    //        reader.Close();
-                    //        rv = reader.RecordsAffected;
-                    //    }
-                        
-                    //}
-        
+                        retryCounter++;
 
-
+                    }
+                    finally
+                    {
+                        cnn.Close();
+                    }
                 }
-                catch (Exception e)
-                {
-                    FireFailed(Action.Save, Utility.Resources["FAILED_REASON_EXCEPTION"]);
-                    FireError(Action.Save, e, sqltext);
-                    string exMsg = Utility.GetResourceString("RES_DataObjectSQLException", e.Message, sqltext);
-                    throw new ORMException(exMsg, sqltext, e);
 
-                }
-                finally
-                {
-                    cnn.Close();
-                }
-            }
+            } while (retry);
 
             result = (rv == 1) ? ActionResult.Succeed : ActionResult.Failed;
 
@@ -2291,7 +2341,7 @@ namespace Silvtek.ORMEngine
 
                 if (ObjectInfo.MappedMembers.HasDigestRecordMember)
                 {
-                    string fulldigestValue = MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, version);
+                    MapUtility.SetRecordDigest(ObjectInfo.MappedMembers, SourceObject, version);
                     //recordDigest = MapUtility.GetDigest(fulldigestValue);
                 }
             }

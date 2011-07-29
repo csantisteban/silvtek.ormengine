@@ -1353,7 +1353,7 @@ namespace Silvtek.ORMEngine.Schema
         /// <param name="obj">The obj.</param>
         /// <param name="version">The version.</param>
         /// <returns></returns>
-        internal static string SetRecordDigest(MapMemberList members, object obj, int version)
+        internal static void SetRecordDigest(MapMemberList members, object obj, int version)
         {
             ArrayList list = new ArrayList();
             MapMember digestMemberField = null;
@@ -1368,14 +1368,13 @@ namespace Silvtek.ORMEngine.Schema
                 list.Add(member.GetMemberValue(obj));
             }
 
-            if (digestMemberField == null) return String.Empty;
+            if (digestMemberField == null) return;
             RecordDigestProvider provider = digestMemberField.Properties.GetRecordDigestProvider();
             object[] objs = (object[])list.ToArray(typeof(object));
             string digest = String.Format("[{1:0000}]{0}", provider.GenerateDigest(objs), version);
             
             digestMemberField.SetMemberValue(obj, digest);
             Debug.WriteLine("Set digest value "+digest);
-            return digest;
         }
 
         /// <summary>

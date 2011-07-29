@@ -213,7 +213,7 @@ namespace Silvtek.ORMEngine.Encryption
 
 
 #if NET11
-            PasswordDeriveBytes passwordDeriveBytes = new PasswordDeriveBytes(Password, saltBytes, hashName, PASSWORD_ITERATIONS);
+            PasswordDeriveBytes passwordDeriveBytes = new PasswordDeriveBytes(Password, saltBytes, hashName,  _PASSWORD_ITERATIONS);
             byte[] keyBytes = passwordDeriveBytes.GetBytes(_KEY_SIZE / 8);
 #endif
 #if NET20
