@@ -291,9 +291,9 @@ namespace Silvtek.ORMEngine.Configs
         private XmlDocument GetFromApplicationConfigFile()
         {
 #if NET11
-            object obj = ConfigurationSettings.GetConfig("ORMConfiguration");
+            object obj = ConfigurationSettings.GetConfig("Silvtek.ORMEngine");
 #else
-            object obj = ConfigurationManager.GetSection("ORMConfiguration");
+            object obj = ConfigurationManager.GetSection("Silvtek.ORMEngine");
 #endif
 
             if (obj == null) return null;

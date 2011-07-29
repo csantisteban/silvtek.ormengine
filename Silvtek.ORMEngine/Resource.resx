@@ -146,7 +146,7 @@ Exception : {1}
             </value>
   </data>
   <data name="RES_Connection_not_found" xml:space="preserve">
-    <value>Connection name "{0}" not found!. Define connection at Connections.Config</value>
+    <value>Connection name "{0}" not found!. Define the connection in the connection.config or application configuration.</value>
   </data>
   <data name="QUERY:ORDER_BY_EXCEPTION" xml:space="preserve">
     <value>Exception occurred when adding an OrderBy property. The Property {0} does not exist in {1}. </value>

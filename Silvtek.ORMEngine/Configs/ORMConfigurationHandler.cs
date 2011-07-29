@@ -4,6 +4,8 @@ using System.Xml;
 
 #if !NET11
 using NUnit.Framework;
+using Silvtek.ORMEngine.Data;
+
 #endif
 
 namespace Silvtek.ORMEngine.Configs
@@ -51,6 +53,10 @@ namespace Silvtek.ORMEngine.Configs
 
                 ORMConfigurationV1 version1 = new ORMConfigurationV1();
                 version1.ReadConfiguration(document);
+
+                // now, lets try to get the connection
+                Connection cnn = ConnectionManager.Current.GetConnection("ORM.TESTERS");
+                Assert.IsNotNull(cnn);
             }
         }
 
