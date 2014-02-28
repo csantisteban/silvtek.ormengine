@@ -24,7 +24,6 @@ namespace Silvtek.ORMEngine
     /// ORM async caller delegate
     /// </summary>
     public delegate ORMObject ORMLoadCaller();
-
     public delegate ORMObject ORMCreateCaller();
     public delegate ActionResult ORMRemoveCaller();
     public delegate ORMObject ORMSaveCaller(bool load);

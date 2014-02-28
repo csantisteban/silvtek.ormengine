@@ -12,15 +12,15 @@ using System.Runtime.CompilerServices;
 //------------------------------------------------------------------------------
 
 [assembly: AssemblyTitle("Silvtek.ORMEngineV1.7")]
-[assembly: AssemblyDescription("Silvtek.ORMEngineV1.7  Release 07/29/2011 15:49:17")]
+[assembly: AssemblyDescription("Silvtek.ORMEngineV1.7  Release 07/29/2011 18:14:40")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Carlos Silva-Santisteban")]
 [assembly: AssemblyProduct("")]
 [assembly: AssemblyCopyright("Copyright (c)2010, Carlos Silva-Santisteban")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("1.7.35.610")]
-[assembly: AssemblyFileVersion("1.7.7829.5697")]
+[assembly: AssemblyVersion("1.7.35.711")]
+[assembly: AssemblyFileVersion("1.7.7829.6570")]
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile("")]
 [assembly: AssemblyKeyName("")]

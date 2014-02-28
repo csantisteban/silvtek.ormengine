@@ -1389,16 +1389,16 @@ namespace Silvtek.ORMEngine.Schema
             {
 
                 case DataType.String:
-                {
-                    if (properties.Encoding == Encoding.ASCII)
                     {
-                        return DbType.AnsiString;
+                        if (properties.Encoding == Encoding.ASCII)
+                        {
+                            return DbType.AnsiString;
+                        }
+                        else
+                        {
+                            return DbType.String;
+                        }
                     }
-                    else
-                    {
-                        return DbType.String;
-                    }
-                }
                 case DataType.Enum:
                     {
                         return DbType.AnsiString;
@@ -1410,7 +1410,6 @@ namespace Silvtek.ORMEngine.Schema
 
                     }
                 case DataType.Int16:
-
                     {
                         return DbType.Int16;
                     }
