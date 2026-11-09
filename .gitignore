@@ -29,3 +29,8 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 *DEPRECATED*
 *.vsdoc
+# CDP - never commit
+.claude/local/
+.cdp/**/session.md
+.cdp/specs/**/.last-hash
+.cdp/tasks/**/.last-hash

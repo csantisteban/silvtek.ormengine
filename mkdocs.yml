@@ -1,0 +1,58 @@
+# MkDocs configuration for the archive's documentation site
+# Built and deployed to GitHub Pages by a GitHub Actions workflow
+---
+site_name: Silvtek.ORMEngine
+site_description: An object-relational mapper for .NET, written from 2002 to 2014 - archived, for reference only
+site_url: https://csantisteban.github.io/silvtek.ormengine/
+repo_url: https://github.com/csantisteban/silvtek.ormengine
+repo_name: csantisteban/silvtek.ormengine
+copyright: Copyright (c) 2002-2014 Carlos Silva-Santisteban - MIT License
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Configuration: configuration.md
+      - Data objects: data-objects.md
+      - Create, load, save, remove and events: crud-and-events.md
+      - Providers: providers.md
+  - Querying:
+      - Query API: querying.md
+      - Free SQL with objects: object-sql.md
+      - Batches: batches.md
+  - Features of the time:
+      - Encryption: encryption.md
+      - Compression: compression.md
+      - Local caching: caching.md
+      - Change broadcasting: change-broadcasting.md
+      - Record digest: record-digest.md
+      - Retry after a SQL error: sql-retry.md
+      - Saving objects to a file: persistence-to-file.md
+      - Object pooling: object-pooling.md
+  - Known issues: known-issues.md

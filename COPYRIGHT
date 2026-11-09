@@ -1,0 +1,15 @@
+Silvtek.ORMEngine
+Copyright (c) 2002-2014 Carlos Silva-Santisteban
+
+Written by Carlos Silva-Santisteban from 2002 to 2014 and released under the
+MIT License (see LICENSE).
+
+ARCHIVED PROJECT - FOR REFERENCE ONLY
+This repository is an archive of past work. It is not maintained: no new
+features, fixes or releases, and issues and pull requests are not reviewed.
+It targets .NET Framework 3.5 and predates NuGet.
+
+Third-party components are referenced by the project files but are not
+included in this repository. Each is under its own license:
+  - NUnit 2.5.5 (nunit.framework.dll)
+  - MySql.Data 5.0.8.1 (MySQL Connector/NET)
